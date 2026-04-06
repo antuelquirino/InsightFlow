@@ -1,0 +1,21 @@
+version: 2
+
+models:
+
+  - name: kpi_churn_rate
+    columns:
+      - name: churn_rate
+        tests:
+          - not_null
+
+  - name: kpi_mrr_growth
+    columns:
+      - name: total_mrr
+        tests:
+          - not_null
+
+  - name: kpi_active_companies
+    columns:
+      - name: active_companies
+        tests:
+          - not_null

@@ -1,0 +1,7 @@
+streamlit
+pandas
+matplotlib
+openai
+google-cloud-bigquery
+db-dtypes
+python-dotenv

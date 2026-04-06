@@ -1,0 +1,68 @@
+version: 2
+
+models:
+
+  - name: dim_organizations
+    description: "Organization dimension table"
+    columns:
+      - name: organization_id
+        tests:
+          - unique
+          - not_null
+
+
+  - name: fact_product_events
+    description: "Product usage events"
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+
+      - name: organization_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_organizations')
+              field: organization_id
+
+      - name: event_timestamp
+        tests:
+          - not_null
+
+
+  - name: fact_subscriptions
+    description: "Subscription lifecycle data"
+    columns:
+      - name: subscription_id
+        tests:
+          - unique
+          - not_null
+
+      - name: organization_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_organizations')
+              field: organization_id
+
+      - name: start_date
+        tests:
+          - not_null
+
+      - name: status
+        tests:
+          - accepted_values:
+              values: ['active', 'canceled', 'churned']
+
+
+  - name: fact_mrr
+    description: "Monthly recurring revenue"
+    columns:
+      - name: month
+        tests:
+          - not_null
+
+      - name: total_mrr
+        tests:
+          - not_null
