@@ -4,7 +4,7 @@ from openai import OpenAI
 from bq_client import run_query, get_schema
 from datetime import datetime
 
-client = OpenAI()
+client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 DATASET = "dbt_marts"
 
 def clean_sql(sql):
