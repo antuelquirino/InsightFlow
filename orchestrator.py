@@ -24,8 +24,12 @@ def run_dbt():
 
 @task(name="Execute dbt Models", retries=1)
 def run_dbt():
-    """Runs dbt transformations to update BigQuery Marts"""
     print(f"Transformation: Ejecutando dbt run en {DBT_PROJECT_DIR}")
+    result = subprocess.run(
+        ["dbt", "run", "--profiles-dir", "."], 
+        check=True, 
+        cwd=DBT_PROJECT_DIR
+    )
     
     if not os.path.exists(DBT_PROJECT_DIR):
         raise FileNotFoundError(f"❌ No se encontró la carpeta dbt: {DBT_PROJECT_DIR}")
