@@ -7,7 +7,7 @@ import sys
 BASE_DIR = os.getcwd()
 # Ruta exacta: Carpeta 'data_generation' -> Archivo 'automation_daily.py'
 DATA_GEN_SCRIPT = os.path.join(BASE_DIR, "data_generation", "automation_daily.py")
-DBT_PROJECT_DIR = os.path.join(BASE_DIR, "insightflow_dbt")
+DBT_PROJECT_DIR = os.path.join(BASE_DIR, "dbt_insightflow")
 
 @task(name="Generate Daily SaaS Data", retries=2)
 def run_generator():
@@ -18,8 +18,9 @@ def run_generator():
         raise FileNotFoundError(f"❌ No se encontró el archivo: {DATA_GEN_SCRIPT}")
 
     # Ejecutamos el script
-    result = subprocess.run([sys.executable, DATA_GEN_SCRIPT], check=True)
-    return "Data generation completed successfully"
+def run_dbt():
+   result = subprocess.run(["dbt", "run", "--profiles-dir", "."], check=True, cwd=DBT_PROJECT_DIR)
+   return "Data generation completed successfully"
 
 @task(name="Execute dbt Models", retries=1)
 def run_dbt():
