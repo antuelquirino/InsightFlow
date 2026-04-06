@@ -1,0 +1,11 @@
+insightflow_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: insightflow-analytics-489617
+      dataset: "dbt"   
+      threads: 4
+      timeout_seconds: 300
+      location: EU
