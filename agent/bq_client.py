@@ -1,12 +1,18 @@
+import streamlit as st
+from google.oauth2 import service_account
 from google.cloud import bigquery
 
 PROJECT_ID = "insightflow-analytics-489617"
 DATASET = "raw"
 
-
 def get_bq_client():
-    return bigquery.Client()
-
+    
+    if "gcp_service_account" in st.secrets:
+        info = st.secrets["gcp_service_account"]
+        credentials = service_account.Credentials.from_service_account_info(info)
+       return bigquery.Client(credentials=credentials, project=PROJECT_ID)
+    else:
+       return bigquery.Client(project=PROJECT_ID)
 
 def run_query(query):
 
