@@ -7,4 +7,5 @@ db-dtypes
 python-dotenv
 prefect
 dbt-bigquery
-faker
+Faker
+fakeredis[aioredis]<2.20.0
