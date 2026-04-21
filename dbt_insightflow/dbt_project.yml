@@ -1,12 +1,8 @@
 
-# Name your project!
 name: 'dbt_insightflow'
 version: '1.0.0'
-
-# This setting configures which "profile" dbt uses for this project.
 profile: 'insightflow_dbt'
 
-# Path configurations
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
@@ -18,20 +14,15 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
-# Configuring models
-# The name under 'models' must match the 'name' at the top of this file
 models:
-  dbt_insightflow:
+  
+  staging:
+    +dataset: staging
+    +materialized: view
 
-    staging:
-      +dataset: staging
+  marts:
+    +dataset: marts
+    core:
+      +materialized: incremental
+    kpi:
       +materialized: view
-
-    marts:
-      +dataset: marts
-
-      core:
-        +materialized: incremental
-
-      kpi:
-        +materialized: view
