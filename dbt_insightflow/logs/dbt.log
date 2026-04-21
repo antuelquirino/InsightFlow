@@ -1,0 +1,89 @@
+[0m19:14:27.428182 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB9D06C50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB8D2DB50>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB9D07010>]}
+
+
+============================== 19:14:27.430710 | dac2654d-7c08-4693-998e-dd823079acdf ==============================
+[0m19:14:27.430710 [info ] [MainThread]: Running with dbt=1.11.7
+[0m19:14:27.430710 [debug] [MainThread]: running dbt with arguments {'version_check': 'True', 'no_print': 'None', 'static_parser': 'True', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'target_path': 'None', 'printer_width': '80', 'write_json': 'True', 'introspect': 'True', 'log_cache_events': 'False', 'empty': 'None', 'cache_selected_only': 'False', 'fail_fast': 'False', 'debug': 'False', 'log_format': 'default', 'profiles_dir': 'C:\\Users\\antue\\Desktop\\InsightFlow_v2\\dbt_insightflow', 'send_anonymous_usage_stats': 'True', 'quiet': 'False', 'warn_error': 'None', 'partial_parse': 'True', 'indirect_selection': 'eager', 'invocation_command': 'dbt ls', 'use_colors': 'True', 'use_experimental_parser': 'False', 'log_path': 'C:\\Users\\antue\\Desktop\\InsightFlow_v2\\dbt_insightflow\\logs'}
+[0m19:14:37.370418 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'project_id', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB8629410>]}
+[0m19:14:37.470698 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'adapter_info', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB5466150>]}
+[0m19:14:37.470698 [info ] [MainThread]: Registered adapter: bigquery=1.11.1
+[0m19:14:38.180594 [debug] [MainThread]: checksum: b80718358155fc17c3559352095564dd56ada1cc1a1c0ef2e62c857e71583775, vars: {}, profile: , target: , version: 1.11.7
+[0m19:14:38.180594 [info ] [MainThread]: Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m19:14:38.180594 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'partial_parser', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADB8D9290>]}
+[0m19:14:39.780539 [warn ] [MainThread]: [[33mWARNING[0m][MissingArgumentsPropertyInGenericTestDeprecation]: Deprecated
+functionality
+Found top-level arguments to test `relationships` defined on
+'fact_product_events' in package 'dbt_insightflow'
+(models\marts\core\schema.yml). Arguments to generic tests should be nested
+under the `arguments` property.
+[0m19:14:39.780539 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'deprecation', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'property_': 'warn', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADCE68910>]}
+[0m19:14:40.120449 [warn ] [MainThread]: [[33mWARNING[0m]: Configuration paths exist in your dbt_project.yml file which do not apply to any resources.
+There are 4 unused configuration paths:
+- models.marts
+- models.marts.kpi
+- models.staging
+- models.marts.core
+[0m19:14:40.135492 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'load_project', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADCF49F90>]}
+[0m19:14:40.268782 [debug] [MainThread]: Wrote artifact WritableManifest to C:\Users\antue\Desktop\InsightFlow_v2\dbt_insightflow\target\manifest.json
+[0m19:14:40.270791 [debug] [MainThread]: Wrote artifact SemanticManifest to C:\Users\antue\Desktop\InsightFlow_v2\dbt_insightflow\target\semantic_manifest.json
+[0m19:14:40.310616 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'resource_counts', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADD234110>]}
+[0m19:14:40.310616 [info ] [MainThread]: Found 11 models, 32 data tests, 4 sources, 538 macros
+[0m19:14:40.310616 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'runnable_timing', 'label': 'dac2654d-7c08-4693-998e-dd823079acdf', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADBC7F750>]}
+[0m19:14:40.310616 [info ] [MainThread]: dbt_insightflow.marts.core.dim_organizations
+[0m19:14:40.318260 [info ] [MainThread]: dbt_insightflow.marts.core.fact_mrr
+[0m19:14:40.318260 [info ] [MainThread]: dbt_insightflow.marts.core.fact_product_events
+[0m19:14:40.318260 [info ] [MainThread]: dbt_insightflow.marts.core.fact_subscriptions
+[0m19:14:40.320271 [info ] [MainThread]: dbt_insightflow.marts.kpi.kpi_active_companies
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.marts.kpi.kpi_churn_rate
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.marts.kpi.kpi_mrr_growth
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.staging.stg_organizations
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.staging.stg_product_events
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.staging.stg_subscriptions
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.staging.stg_users
+[0m19:14:40.320816 [info ] [MainThread]: source:dbt_insightflow.raw.organizations
+[0m19:14:40.320816 [info ] [MainThread]: source:dbt_insightflow.raw.product_events
+[0m19:14:40.320816 [info ] [MainThread]: source:dbt_insightflow.raw.subscriptions
+[0m19:14:40.320816 [info ] [MainThread]: source:dbt_insightflow.raw.users
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.marts.core.accepted_values_fact_subscriptions_status__active__canceled__churned
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.staging.accepted_values_stg_subscriptions_status__active__canceled
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.mmr_positive
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.no_future_dates
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_dim_organizations_organization_id
+[0m19:14:40.320816 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_mrr_month
+[0m19:14:40.330562 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_mrr_total_mrr
+[0m19:14:40.330562 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_product_events_event_id
+[0m19:14:40.330562 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_product_events_event_timestamp
+[0m19:14:40.330562 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_product_events_organization_id
+[0m19:14:40.330562 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_subscriptions_organization_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_subscriptions_start_date
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.core.not_null_fact_subscriptions_subscription_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.kpi.not_null_kpi_active_companies_active_companies
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.kpi.not_null_kpi_churn_rate_churn_rate
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.kpi.not_null_kpi_mrr_growth_total_mrr
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.staging.not_null_stg_organizations_organization_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.staging.not_null_stg_product_events_event_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.staging.not_null_stg_subscriptions_subscription_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.staging.not_null_stg_users_user_id
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.core.relationships_fact_product_events_organization_id__organization_id__ref_dim_organizations_
+[0m19:14:40.334046 [info ] [MainThread]: dbt_insightflow.marts.core.relationships_fact_subscriptions_organization_id__organization_id__ref_dim_organizations_
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.relationships_stg_product_events_user_id__user_id__ref_stg_users_
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.relationships_stg_subscriptions_organization_id__organization_id__ref_stg_organizations_
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.relationships_stg_users_organization_id__organization_id__ref_stg_organizations_
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.marts.core.unique_dim_organizations_organization_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.marts.core.unique_fact_product_events_event_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.marts.core.unique_fact_subscriptions_subscription_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.unique_stg_organizations_organization_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.unique_stg_product_events_event_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.unique_stg_subscriptions_subscription_id
+[0m19:14:40.340781 [info ] [MainThread]: dbt_insightflow.staging.unique_stg_users_user_id
+[0m19:14:40.340781 [warn ] [MainThread]: [[33mWARNING[0m][DeprecationsSummary]: Deprecated functionality
+Summary of encountered deprecations:
+- MissingArgumentsPropertyInGenericTestDeprecation: 7 occurrences
+To see all deprecation instances instead of just the first occurrence of each,
+run command again with the `--show-all-deprecations` flag. You may also need to
+run with `--no-partial-parse` as some deprecations are only encountered during
+parsing.
+[0m19:14:40.340781 [debug] [MainThread]: Command `dbt ls` succeeded at 19:14:40.340781 after 13.07 seconds
+[0m19:14:40.349948 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB1EAFD90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FAB9DAE4D0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x000001FADCF5C3D0>]}
+[0m19:14:40.350455 [debug] [MainThread]: Flushing usage events
+[0m19:14:41.300759 [debug] [MainThread]: An error was encountered while trying to flush usage events

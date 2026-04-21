@@ -3,9 +3,10 @@ insightflow_dbt:
   outputs:
     dev:
       type: bigquery
-      method: oauth
+      method: service-account
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
       project: insightflow-analytics-489617
-      dataset: "dbt"   
+      dataset: dbt
       threads: 4
       timeout_seconds: 300
       location: EU

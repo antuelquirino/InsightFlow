@@ -54,7 +54,7 @@ def run_dbt_transformations():
     # Executes dbt run. Ensure your profiles.yml is accessible.
     try:
         result = subprocess.run(
-            ["dbt", "run", "--profiles-dir", "."], 
+            ["dbt", "run"], 
             check=True, 
             cwd=DBT_PROJECT_DIR,
             capture_output=True,
