@@ -15,14 +15,14 @@ clean-targets:
   - "dbt_packages"
 
 models:
-  
-  staging:
-    +dataset: staging
-    +materialized: view
-
-  marts:
-    +dataset: marts
-    core:
-      +materialized: incremental
-    kpi:
+  dbt_insightflow:
+    staging:
+      +schema: staging
       +materialized: view
+
+    marts:
+      +schema: marts
+      core:
+        +materialized: incremental
+      kpi:
+        +materialized: view
