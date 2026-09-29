@@ -2,52 +2,100 @@ version: 2
 
 models:
   - name: stg_organizations
+    description: One row per organization, typed and renamed from raw.
     columns:
       - name: organization_id
-        tests:
+        data_tests: [unique, not_null]
+      - name: acquisition_channel
+        data_tests:
           - not_null
-          - unique
+          - accepted_values:
+              arguments:
+                values: ['organic', 'paid_ads', 'partner', 'outbound']
+      - name: company_size
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['small', 'medium', 'large']
+      - name: signup_date
+        data_tests: [not_null]
 
-  - name: stg_users
+  - name: stg_plans
+    description: One row per plan price version.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['plan_id', 'valid_from']
     columns:
-      - name: user_id
-        tests:
+      - name: plan_id
+        data_tests:
           - not_null
-          - unique
-
-      - name: organization_id
-        tests:
-          - relationships:
-              to: ref('stg_organizations')
-              field: organization_id
+          - accepted_values:
+              arguments:
+                values: ['starter', 'pro', 'enterprise']
+      - name: monthly_price_per_seat
+        data_tests: [not_null]
 
   - name: stg_subscriptions
+    description: One row per subscription period, covering [start_date, end_date).
     columns:
       - name: subscription_id
-        tests:
-          - not_null
-          - unique
-
+        data_tests: [unique, not_null]
       - name: organization_id
-        tests:
+        data_tests:
+          - not_null
           - relationships:
-              to: ref('stg_organizations')
-              field: organization_id
-
-      - name: status
-        tests:
+              arguments:
+                to: ref('stg_organizations')
+                field: organization_id
+      - name: plan_id
+        data_tests:
           - accepted_values:
-              values: ['active', 'canceled']
+              arguments:
+                values: ['starter', 'pro', 'enterprise']
+      - name: end_reason
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['churned', 'upgraded', 'downgraded', 'seats_changed',
+                         'price_changed', 'trial_converted', 'trial_expired']
+      - name: mrr
+        data_tests: [not_null]
+
+  - name: stg_invoices
+    description: One row per invoice.
+    columns:
+      - name: invoice_id
+        data_tests: [unique, not_null]
+      - name: subscription_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_subscriptions')
+                field: subscription_id
+      - name: status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['paid', 'failed', 'refunded']
 
   - name: stg_product_events
+    description: Weekly product activity per organization (weeks start on Monday).
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['organization_id', 'week_start']
     columns:
-      - name: event_id
-        tests:
-          - not_null
-          - unique
-
-      - name: user_id
-        tests:
+      - name: organization_id
+        data_tests:
           - relationships:
-              to: ref('stg_users')
-              field: user_id
+              arguments:
+                to: ref('stg_organizations')
+                field: organization_id
+
+  - name: stg_marketing_spend
+    description: Monthly marketing spend per acquisition channel.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'acquisition_channel']

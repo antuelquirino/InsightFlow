@@ -1,0 +1,48 @@
+version: 2
+
+models:
+  - name: int_months
+    description: Month spine of the reporting window (first to last signup month).
+    columns:
+      - name: month
+        data_tests: [unique, not_null]
+
+  - name: int_mrr_by_org_monthly
+    description: >
+      MRR of each organization at each month end, from its first paid month to
+      the end of the window. mrr is 0 in months without a paid period.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'organization_id']
+    columns:
+      - name: mrr
+        data_tests: [not_null]
+
+  - name: int_mrr_movements
+    description: Month-over-month MRR change per organization and its classification.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'organization_id']
+    columns:
+      - name: movement_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['new', 'expansion', 'contraction', 'churn', 'reactivation',
+                         'unchanged', 'inactive']
+
+  - name: int_weekly_activity
+    description: Weekly activity per organization with 4-week and prior 8-week averages.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['organization_id', 'week_start']
+
+  - name: int_org_cohorts
+    description: Signup and first-paid cohort of every organization.
+    columns:
+      - name: organization_id
+        data_tests: [unique, not_null]

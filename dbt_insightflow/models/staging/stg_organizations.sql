@@ -1,13 +1,10 @@
-with source as (
-    select
-        organization_id,
-        name as organization_name,
-        industry,
-        country,
-        company_size,
-        safe_cast(parse_timestamp('%Y-%m-%d %H:%M:%S', created_at) as date) as created_at
-    from {{ source('raw','organizations') }}
-)
-
-select *
-from source
+select
+    organization_id,
+    name as organization_name,
+    industry,
+    country,
+    company_size,
+    acquisition_channel,
+    signup_date,
+    date_trunc(signup_date, month) as signup_month
+from {{ source('raw', 'organizations') }}
