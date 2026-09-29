@@ -17,3 +17,6 @@ pyyaml
 streamlit
 matplotlib
 openai
+
+# API (see api/requirements.txt)
+-r api/requirements.txt
