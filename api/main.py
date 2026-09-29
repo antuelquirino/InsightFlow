@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from google.api_core.exceptions import GoogleAPIError
 
 from api.bigquery import MartsClient
+from api.routers import customers, metrics
 from api.settings import Settings, get_settings
 
 DESCRIPTION = """
@@ -40,6 +41,8 @@ def create_app(settings: Settings | None = None, marts: MartsClient | None = Non
         """Returns `ok` when the API is up. Does not query BigQuery."""
         return {"status": "ok"}
 
+    app.include_router(metrics.router)
+    app.include_router(customers.router)
     return app
 
 

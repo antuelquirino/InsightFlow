@@ -36,7 +36,7 @@ class MartsClient:
         return self._client
 
     def query(self, sql: str, params: dict[str, Any] | None = None, *, cache: bool = True) -> list[Row]:
-        params = params or {}
+        params = {name: tuple(v) if isinstance(v, list) else v for name, v in (params or {}).items()}
         key = (sql, tuple(sorted(params.items())))
         if cache:
             with self._lock:
@@ -61,11 +61,19 @@ class MartsClient:
         return rows
 
 
-def _parameter(name: str, value: Any) -> bigquery.ScalarQueryParameter:
+def _parameter(name: str, value: Any) -> bigquery.ScalarQueryParameter | bigquery.ArrayQueryParameter:
+    if isinstance(value, tuple):
+        if not value:
+            raise ValueError(f"Query parameter {name!r} is an empty list")
+        return bigquery.ArrayQueryParameter(name, _bq_type(name, value[0]), list(value))
+    return bigquery.ScalarQueryParameter(name, _bq_type(name, value), value)
+
+
+def _bq_type(name: str, value: Any) -> str:
     # bool before int: bool is a subclass of int.
     for python_type, bq_type in ((bool, "BOOL"), (int, "INT64"), (float, "FLOAT64"), (date, "DATE"), (str, "STRING")):
         if isinstance(value, python_type):
-            return bigquery.ScalarQueryParameter(name, bq_type, value)
+            return bq_type
     raise TypeError(f"Unsupported query parameter {name!r} of type {type(value).__name__}")
 
 
