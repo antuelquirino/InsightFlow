@@ -25,7 +25,7 @@ These are the definitions the tests use and the dbt marts implement.
 | Subscription period | A row in `raw.subscriptions`, covering `[start_date, end_date)`. A plan, seat or price change closes one period and opens the next on the same day. |
 | Paying customer | An organization with an open non-trial period on a given day. |
 | MRR | Sum of `mrr` (`seats × monthly_price_per_seat`) of the periods active on the last day of the month. |
-| Logo churn rate | Customers who churned during the month ÷ customers paying on the month's first day. |
+| Logo churn rate | Customers paying at the previous month end who pay nothing at this month end ÷ customers paying at the previous month end. By plan or channel, each customer counts under the plan it had at the previous month end, so an upgrade is not a churn. |
 | NRR (12 months) | Current MRR of the customers who were paying 12 months ago ÷ their MRR back then. Includes churn, contraction, expansion and plan changes. |
 | Early churn | Share of customers who churn within 6 months of their first paid day, counting only customers with at least 6 months of history in the window. |
 
@@ -41,11 +41,11 @@ returns to its usual level. Pro and Enterprise are unaffected.
 
 | Starter logo churn | Monthly average |
 |---|---|
-| May–Oct 2025 (before) | 3.96% |
-| Dec 2025–Feb 2026 (after) | 9.19% (2.3×) |
-| Mar–Aug 2026 (settled) | 4.28% |
+| May–Oct 2025 (before) | 3.98% |
+| Dec 2025–Feb 2026 (after) | 9.18% (2.3×) |
+| Mar–Aug 2026 (settled) | 4.49% |
 
-Pro and Enterprise churn stays flat over the same months (1.3% before, 0.6% after).
+Pro and Enterprise churn does not rise over the same months (1.5% before, 0.6% after).
 
 **Where it shows.**
 - `raw.plans`: two Starter rows, split at 2025-11-15.
