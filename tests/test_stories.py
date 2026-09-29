@@ -175,9 +175,11 @@ def test_activity_fades_before_churn(tables, paid):
     assert by_week.loc[11:15].std() < 0.1 * baseline  # flat before the fade starts
 
 
-def test_some_current_customers_are_fading(tables):
-    # Customers who churn just after the window already fade inside it.
-    events = tables["product_events"]
+def test_some_current_customers_are_fading(tables, paid):
+    # Customers who churn just after the window already fade inside it. Same
+    # windows as dim_organizations.usage_trend, for customers paying at the end.
+    paying = active_on(paid, CFG.window_end)["organization_id"]
+    events = tables["product_events"][tables["product_events"]["organization_id"].isin(paying)]
     last = events["week_start"].max()
     recent = events[events["week_start"] > last - timedelta(weeks=4)]
     prior = events[(events["week_start"] <= last - timedelta(weeks=4))

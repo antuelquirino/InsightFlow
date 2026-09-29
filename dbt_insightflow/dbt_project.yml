@@ -13,6 +13,10 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+vars:
+  # Share of revenue left after cost of service; used for LTV and CAC payback.
+  gross_margin: 0.8
+
 # Datasets are the profile's base dataset (`dbt`) plus the layer name:
 # dbt_staging, dbt_intermediate, dbt_marts.
 models:

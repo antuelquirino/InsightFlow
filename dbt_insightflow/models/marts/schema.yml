@@ -1,0 +1,335 @@
+version: 2
+
+# Conventions for every mart:
+# - month columns hold the first day of the month; values are as of the month end.
+# - Money is USD. Rates and ratios are fractions between 0 and 1 (0.05 = 5%).
+# - A "paying customer" is an organization with a paid (non-trial) subscription.
+# - The reporting window is September 2024 to August 2026; the company launched
+#   in September 2024, so the first months have very few customers.
+
+models:
+  - name: fct_mrr_monthly
+    description: >
+      Monthly recurring revenue at each month end, split by plan, acquisition
+      channel and company size. One row per month, plan, channel and size that
+      has at least one paying customer. Sum rows to get totals, e.g. total MRR
+      per month = sum(mrr) group by month.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'plan_id', 'acquisition_channel', 'company_size']
+    columns:
+      - name: month
+        description: First day of the month; values are measured at the month end.
+        data_tests: [not_null]
+      - name: plan_id
+        description: Plan of the customers at the month end.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['starter', 'pro', 'enterprise']
+      - name: acquisition_channel
+        description: Channel the customers came from.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['organic', 'paid_ads', 'partner', 'outbound']
+      - name: company_size
+        description: "Customer segment by employees: small (1-50), medium (51-500), large (500+)."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['small', 'medium', 'large']
+      - name: paying_customers
+        description: Number of paying customers in this group at the month end.
+      - name: seats
+        description: Total seats paid by those customers.
+      - name: mrr
+        description: Monthly recurring revenue in USD at the month end.
+        data_tests: [not_null]
+      - name: arr
+        description: Annual recurring revenue in USD (mrr × 12).
+
+  - name: fct_mrr_movements
+    description: >
+      Monthly MRR bridge, one row per month. starting_mrr + new_mrr +
+      expansion_mrr + contraction_mrr + churned_mrr + reactivation_mrr =
+      ending_mrr, and starting_mrr equals the previous month's ending_mrr.
+      Losses (contraction, churn) are negative numbers. Price increases for
+      existing customers count as expansion (the Starter price change of
+      November 2025 shows up here).
+    columns:
+      - name: month
+        description: First day of the month.
+        data_tests: [unique, not_null]
+      - name: starting_mrr
+        description: MRR in USD at the end of the previous month.
+      - name: new_mrr
+        description: MRR from customers paying for the first time this month (USD, positive).
+      - name: expansion_mrr
+        description: MRR increase from existing customers who added seats, upgraded or had a price increase (USD, positive).
+      - name: contraction_mrr
+        description: MRR decrease from existing customers who removed seats or downgraded but kept paying (USD, negative).
+      - name: churned_mrr
+        description: MRR lost from customers who stopped paying this month (USD, negative).
+      - name: reactivation_mrr
+        description: MRR from former customers who came back after churning (USD, positive).
+      - name: net_new_mrr
+        description: Sum of all movements; ending_mrr - starting_mrr (USD).
+      - name: ending_mrr
+        description: MRR in USD at the end of this month.
+      - name: customers_at_start
+        description: Paying customers at the end of the previous month.
+      - name: new_customers
+        description: Customers paying for the first time this month.
+      - name: expanded_customers
+        description: Customers whose MRR went up this month.
+      - name: contracted_customers
+        description: Customers whose MRR went down but stayed above zero.
+      - name: churned_customers
+        description: Customers who paid last month and pay nothing at this month end.
+      - name: reactivated_customers
+        description: Former customers who started paying again this month.
+      - name: customers_at_end
+        description: Paying customers at the end of this month.
+
+  - name: fct_churn
+    description: >
+      Logo churn and revenue churn per month, in total and broken down by plan
+      or by acquisition channel. Filter on breakdown ('total', 'plan' or
+      'channel') and read breakdown_value. A customer counts under the plan it
+      had at the previous month end, so upgrades and downgrades are never
+      churn. Amounts here are positive USD. Monthly churn is noisy for small
+      groups; average several months before drawing conclusions.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'breakdown', 'breakdown_value']
+    columns:
+      - name: month
+        description: First day of the month.
+        data_tests: [not_null]
+      - name: breakdown
+        description: "Dimension of the row: 'total' (all customers), 'plan' or 'channel'."
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['total', 'plan', 'channel']
+      - name: breakdown_value
+        description: >
+          'all' when breakdown = 'total'; the plan (starter, pro, enterprise) or
+          the acquisition channel (organic, paid_ads, partner, outbound) otherwise.
+      - name: customers_at_start
+        description: Paying customers at the end of the previous month.
+      - name: churned_customers
+        description: Of those, how many pay nothing at this month end.
+      - name: mrr_at_start
+        description: MRR in USD of customers_at_start at the end of the previous month.
+      - name: churned_mrr
+        description: MRR in USD lost from churned customers (positive).
+      - name: contraction_mrr
+        description: MRR in USD lost from customers who reduced seats or downgraded (positive).
+      - name: expansion_mrr
+        description: MRR in USD gained from customers who added seats, upgraded or had a price increase (positive).
+      - name: logo_churn_rate
+        description: churned_customers / customers_at_start, a fraction between 0 and 1.
+      - name: revenue_churn_rate
+        description: churned_mrr / mrr_at_start.
+      - name: gross_mrr_churn_rate
+        description: (churned_mrr + contraction_mrr) / mrr_at_start.
+      - name: net_mrr_churn_rate
+        description: >
+          (churned_mrr + contraction_mrr - expansion_mrr) / mrr_at_start.
+          Negative when expansion outweighs losses (net negative churn).
+
+  - name: fct_retention_cohorts
+    description: >
+      Retention matrix. Customers are grouped into cohorts by the month they
+      first paid; each row is one cohort observed months_since_first_paid months
+      later. Month 0 is the cohort month itself. Revenue retention above 1 means
+      the cohort pays more than when it started (expansion beats churn).
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['cohort_month', 'months_since_first_paid']
+    columns:
+      - name: cohort_month
+        description: First day of the month in which the cohort's customers first paid.
+        data_tests: [not_null]
+      - name: months_since_first_paid
+        description: Months elapsed since cohort_month (0 = the cohort month).
+        data_tests: [not_null]
+      - name: cohort_customers
+        description: Number of customers in the cohort.
+      - name: cohort_starting_mrr
+        description: Cohort MRR in USD at the end of the cohort month.
+      - name: active_customers
+        description: Cohort customers still paying at the end of this month.
+      - name: mrr
+        description: Cohort MRR in USD at the end of this month.
+      - name: logo_retention
+        description: active_customers / cohort_customers.
+      - name: revenue_retention
+        description: mrr / cohort_starting_mrr; can exceed 1.
+
+  - name: fct_unit_economics
+    description: >
+      Acquisition cost and customer value per acquisition channel and month.
+      CAC, churn and the metrics derived from them use trailing 12-month sums
+      (shorter at the start of the window) because monthly counts per channel
+      are small. LTV and payback assume a gross margin of 80% (dbt var
+      gross_margin). For the current picture, use the latest month.
+    data_tests:
+      - unique_combination:
+          arguments:
+            columns: ['month', 'acquisition_channel']
+    columns:
+      - name: month
+        description: First day of the month.
+        data_tests: [not_null]
+      - name: acquisition_channel
+        description: organic, paid_ads, partner or outbound.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['organic', 'paid_ads', 'partner', 'outbound']
+      - name: spend
+        description: Marketing spend in USD on this channel in this month.
+      - name: new_customers
+        description: Customers from this channel who paid for the first time this month.
+      - name: paying_customers
+        description: Paying customers from this channel at the month end.
+      - name: mrr
+        description: MRR in USD of this channel's customers at the month end.
+      - name: spend_12m
+        description: Spend in USD over the trailing 12 months.
+      - name: new_customers_12m
+        description: New customers over the trailing 12 months.
+      - name: cac
+        description: Customer acquisition cost in USD, spend_12m / new_customers_12m.
+      - name: arpa
+        description: Average revenue per account in USD, mrr / paying_customers.
+      - name: monthly_logo_churn_rate
+        description: Average monthly logo churn over the trailing 12 months, a fraction.
+      - name: ltv
+        description: Estimated lifetime value in USD, arpa × gross margin / monthly_logo_churn_rate.
+      - name: ltv_to_cac
+        description: ltv / cac. Above 3 is usually considered healthy.
+      - name: payback_months
+        description: Months of gross margin needed to recover the CAC, cac / (arpa × gross margin).
+
+  - name: dim_organizations
+    description: >
+      One row per organization that ever started a trial, with its attributes
+      and its state at the end of the window (August 2026). Use status =
+      'paying' for current customers. churn_risk flags paying customers whose
+      usage is fading: activity fades for 6 to 10 weeks before a customer
+      cancels.
+    columns:
+      - name: organization_id
+        description: Unique organization id.
+        data_tests: [unique, not_null]
+      - name: organization_name
+        description: Company name.
+      - name: industry
+        description: Industry of the company.
+      - name: country
+        description: ISO 3166-1 alpha-2 country code.
+      - name: company_size
+        description: "small (1-50 employees), medium (51-500) or large (500+)."
+      - name: acquisition_channel
+        description: organic, paid_ads, partner or outbound.
+      - name: signup_date
+        description: Day the organization started its 14-day trial.
+      - name: first_paid_date
+        description: Day it first paid; null if the trial never converted.
+      - name: cohort_month
+        description: First day of the month of first_paid_date.
+      - name: first_plan_id
+        description: Plan it first paid for.
+      - name: status
+        description: >
+          At the window end: 'paying', 'churned' (paid before, not now), 'trial'
+          (trial in progress) or 'trial_expired' (never paid).
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['paying', 'churned', 'trial', 'trial_expired']
+      - name: current_plan_id
+        description: Current plan; null unless status = 'paying'.
+      - name: current_seats
+        description: Seats currently paid; 0 unless status = 'paying'.
+      - name: current_mrr
+        description: Current MRR in USD; 0 unless status = 'paying'.
+      - name: last_churn_date
+        description: Day of its most recent churn, if any.
+      - name: lifetime_revenue
+        description: Sum of paid invoices in USD.
+      - name: failed_invoices
+        description: Number of failed invoice payments.
+      - name: last_week_active_users
+        description: Active users in the last complete week of the window.
+      - name: active_users_avg_4w
+        description: Average weekly active users over the last 4 weeks.
+      - name: active_users_avg_prior_8w
+        description: Average weekly active users over the 8 weeks before those 4.
+      - name: usage_trend
+        description: >
+          active_users_avg_4w / active_users_avg_prior_8w. 1 means stable usage,
+          below 1 means fading usage.
+      - name: churn_risk
+        description: >
+          For paying customers: 'high' (usage_trend below 0.6), 'medium' (0.6 to
+          0.8), 'low' (0.8 or more) or 'unknown' (too new to compare). Null for
+          organizations that are not paying.
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['high', 'medium', 'low', 'unknown']
+
+  - name: kpi_summary
+    description: >
+      One row per month with the headline KPIs and their change against the
+      previous month, for dashboard cards. The latest month is the current
+      state of the business.
+    columns:
+      - name: month
+        description: First day of the month.
+        data_tests: [unique, not_null]
+      - name: mrr
+        description: MRR in USD at the month end.
+      - name: arr
+        description: ARR in USD (mrr × 12).
+      - name: paying_customers
+        description: Paying customers at the month end.
+      - name: arpa
+        description: Average MRR per paying customer in USD.
+      - name: new_customers
+        description: Customers paying for the first time this month.
+      - name: churned_customers
+        description: Customers who stopped paying this month.
+      - name: net_new_mrr
+        description: MRR change against the previous month in USD.
+      - name: logo_churn_rate
+        description: Share of last month's customers who stopped paying this month.
+      - name: gross_mrr_churn_rate
+        description: MRR lost to churn and contraction / MRR at the start of the month.
+      - name: nrr
+        description: >
+          Net revenue retention over 12 months: MRR now of the customers who
+          were paying 12 months earlier / their MRR back then. Above 1 means
+          existing customers grow revenue even after churn. Null for the first
+          12 months.
+      - name: logo_retention_12m
+        description: Share of the customers paying 12 months earlier who still pay.
+      - name: mrr_growth_rate
+        description: MRR change against the previous month, as a fraction of last month's MRR.
+      - name: paying_customers_change
+        description: Change in paying customers against the previous month.
+      - name: arpa_growth_rate
+        description: ARPA change against the previous month, as a fraction.
+      - name: logo_churn_rate_change
+        description: Logo churn rate minus the previous month's (in fraction points).
+      - name: nrr_change
+        description: NRR minus the previous month's (in fraction points).

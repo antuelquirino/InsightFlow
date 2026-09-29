@@ -78,8 +78,15 @@ closes: the ones who stay behave like everyone else.
 
 Paid ads is also the channel that grows the most: its share of new trials goes
 from 24% to 40% over the window, and it has the most marketing spend. The unit
-economics (CAC vs. LTV) make the channel look worse than its acquisition volume
-suggests.
+economics make it the weakest channel by far (August 2026, trailing 12 months,
+80% gross margin):
+
+| Channel | CAC | Monthly logo churn | LTV | LTV:CAC | Payback |
+|---|---|---|---|---|---|
+| Paid ads | $2,339 | 6.2% | $5,839 | 2.5 | 6.4 months |
+| Partner | $907 | 2.8% | $14,214 | 15.7 | 2.3 months |
+| Outbound | $1,922 | 2.3% | $36,992 | 19.2 | 2.3 months |
+| Organic | $855 | 2.9% | $18,411 | 21.5 | 1.6 months |
 
 **Where it shows.** `raw.organizations.acquisition_channel` joined to churned
 periods; `fct_churn` by channel; `fct_unit_economics` (LTV and payback by
@@ -135,11 +142,20 @@ of its usual level.
 | Active users (index, weeks 11–15 = 100) | 104 | 100 | 95 | 83 | 67 | 50 | 33 |
 
 Because the simulation runs three months past the window, customers who will
-churn in September–November 2026 are already fading in August 2026: 27 of the
-customers active at the end (6%) have their last 4 weeks below 60% of the 8
-weeks before. That is the population the churn-risk flag in `dim_organizations`
-should catch. Healthy customers also have occasional one-week dips and a
-Christmas dip, so a single bad week is not a signal.
+churn right after August 2026 are already fading inside it. `dim_organizations`
+flags paying customers by `usage_trend` (last 4 weeks ÷ the 8 weeks before),
+and the flag works: in the simulated months after the window,
+
+| Churn risk | Paying customers | Churn within the next 3 months |
+|---|---|---|
+| High (trend below 0.6) | 14 | 6 (43%) |
+| Medium (0.6 to 0.8) | 41 | 6 (15%) |
+| Low (0.8 or more) | 385 | 21 (5%) |
+| Unknown (too new) | 18 | 2 (11%) |
+
+Most churns two or three months out still look healthy in August: the fade
+starts only 6 to 10 weeks before. Healthy customers also have occasional
+one-week dips and a Christmas dip, so a single bad week is not a signal.
 
 **Where it shows.** `raw.product_events` (weekly `active_users`, `logins`,
 `dashboards_viewed`, `queries_run`, `reports_exported` per organization);

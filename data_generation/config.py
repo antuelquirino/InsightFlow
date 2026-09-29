@@ -139,9 +139,9 @@ INVOICE_FAILED_RATE = {"starter": 0.05, "pro": 0.03, "enterprise": 0.015}
 INVOICE_REFUNDED_RATE = 0.01
 
 # --- Marketing spend (USD per month): start and end of window -----------------
-SPEND_START = {"organic": 2000, "paid_ads": 9000, "partner": 1500, "outbound": 6000}
-SPEND_END = {"organic": 3500, "paid_ads": 24000, "partner": 2500, "outbound": 9500}
-PARTNER_COMMISSION_PER_CONVERSION = 180  # on top of the partner base spend
+SPEND_START = {"organic": 5500, "paid_ads": 9000, "partner": 1500, "outbound": 6000}
+SPEND_END = {"organic": 9000, "paid_ads": 24000, "partner": 2500, "outbound": 9500}
+PARTNER_COMMISSION_PER_CONVERSION = 450  # on top of the partner base spend
 
 # --- Product activity (weekly, per organization) ------------------------------
 # Story 4: usage fades before a customer churns.
