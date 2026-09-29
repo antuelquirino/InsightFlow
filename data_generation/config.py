@@ -100,20 +100,20 @@ SIGNUPS_GROWTH = 33
 SIGNUPS_RAMP_MONTHS = 9
 # Story 5: seasonality of new trials by calendar month.
 SEASONALITY = {
-    1: 0.70, 2: 0.95, 3: 1.45, 4: 1.05, 5: 1.02, 6: 0.97,
+    1: 0.70, 2: 0.95, 3: 1.55, 4: 1.05, 5: 1.02, 6: 0.97,
     7: 0.90, 8: 0.88, 9: 1.05, 10: 1.08, 11: 1.00, 12: 0.62,
 }
 TRIAL_CONVERSION = {"organic": 0.58, "paid_ads": 0.46, "partner": 0.64, "outbound": 0.55}
 
 # --- Lifecycle (monthly probabilities for paying customers) -------------------
-CHURN_BASE = {"starter": 0.030, "pro": 0.019, "enterprise": 0.009}
+CHURN_BASE = {"starter": 0.030, "pro": 0.019, "enterprise": 0.007}
 # Story 2: paid ads customers churn about twice as fast in their first months.
 CHANNEL_CHURN_MULTIPLIER = {"organic": 1.0, "paid_ads": 1.15, "partner": 0.9, "outbound": 1.0}
 PAID_ADS_EARLY_MONTHS = 6
-PAID_ADS_EARLY_CHURN_MULTIPLIER = 2.3
+PAID_ADS_EARLY_CHURN_MULTIPLIER = 2.1
 # Story 1: Starter churn after the price change.
 # Applies from the change date to the end of the third full month after it.
-PRICE_CHANGE_CHURN_MULTIPLIER = 2.3
+PRICE_CHANGE_CHURN_MULTIPLIER = 2.6
 PRICE_CHANGE_EFFECT_MONTHS = 3
 
 # Seat changes: (probability, min share, max share) of current seats.
@@ -121,7 +121,7 @@ PRICE_CHANGE_EFFECT_MONTHS = 3
 EXPANSION = {
     "starter": (0.025, 0.2, 0.6),
     "pro": (0.060, 0.10, 0.30),
-    "enterprise": (0.300, 0.04, 0.12),
+    "enterprise": (0.350, 0.04, 0.12),
 }
 CONTRACTION = {
     "starter": (0.015, 0.2, 0.5),
