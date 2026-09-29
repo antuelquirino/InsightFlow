@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import date
 from enum import Enum
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -184,3 +185,44 @@ class AtRiskCustomer(BaseModel):
 
 class AtRiskResponse(BaseModel):
     customers: list[AtRiskCustomer]
+
+
+# --- POST /ask -----------------------------------------------------------------------
+
+class AskRequest(BaseModel):
+    question: str = Field(
+        min_length=3,
+        max_length=500,
+        description="A business question in plain language.",
+        examples=["What happened to Starter churn after the price change?"],
+    )
+
+
+class Chart(BaseModel):
+    type: Literal["line", "bar", "number", "table"] = Field(
+        description="'line' (x is a month or date), 'bar' (x is a category), 'number' "
+        "(one headline value) or 'table'.",
+        examples=["line"],
+    )
+    x: str | None = Field(default=None, description="Column for the x axis.", examples=["month"])
+    y: list[str] = Field(default=[], description="Numeric columns to plot.", examples=[["logo_churn_rate"]])
+
+
+class AskResponse(BaseModel):
+    status: Literal["answered", "cannot_answer", "failed"] = Field(
+        description="'answered'; 'cannot_answer' when the data cannot answer the question; "
+        "'failed' when no valid query could be built (answer explains).",
+        examples=["answered"],
+    )
+    answer: str = Field(examples=[
+        "Starter churn rose from 4.0% before the November 2025 price change to 9.2% in the "
+        "three months after it, then settled back to about 4.5%."
+    ])
+    insight: str | None = Field(examples=["The price increase cost more customers than it looked like at first."])
+    sql: str | None = Field(description="The query that produced the rows.", examples=[
+        "SELECT month, logo_churn_rate FROM `insightflow-analytics-489617`.dbt_marts.fct_churn "
+        "WHERE breakdown = 'plan' AND breakdown_value = 'starter' ORDER BY month LIMIT 500"
+    ])
+    columns: list[str] = Field(examples=[["month", "logo_churn_rate"]])
+    rows: list[dict[str, Any]] = Field(examples=[[{"month": "2026-01-01", "logo_churn_rate": 0.118}]])
+    chart: Chart

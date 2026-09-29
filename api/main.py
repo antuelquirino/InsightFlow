@@ -6,8 +6,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from google.api_core.exceptions import GoogleAPIError
 
+from api.agent.pipeline import Analyst
 from api.bigquery import MartsClient
-from api.routers import customers, metrics
+from api.llm import LLM, create_llm
+from api.rate_limit import AskRateLimiter
+from api.routers import ask, customers, metrics
 from api.settings import Settings, get_settings
 
 DESCRIPTION = """
@@ -19,11 +22,18 @@ left to the client.
 """
 
 
-def create_app(settings: Settings | None = None, marts: MartsClient | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    marts: MartsClient | None = None,
+    llm: LLM | None = None,
+) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(title="InsightFlow API", version="0.1.0", description=DESCRIPTION)
     app.state.settings = settings
     app.state.marts = marts or MartsClient(settings)
+    llm = llm or create_llm(settings)
+    app.state.analyst = Analyst(llm, app.state.marts) if llm else None
+    app.state.ask_limiter = AskRateLimiter(settings.ask_requests_per_minute, settings.ask_requests_per_day)
 
     app.add_middleware(
         CORSMiddleware,
@@ -43,6 +53,7 @@ def create_app(settings: Settings | None = None, marts: MartsClient | None = Non
 
     app.include_router(metrics.router)
     app.include_router(customers.router)
+    app.include_router(ask.router)
     return app
 
 

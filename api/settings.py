@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +19,20 @@ class Settings(BaseSettings):
 
     # Comma-separated list of frontend origins allowed by CORS.
     allowed_origins: str = "http://localhost:3000"
+
+    # LLM behind POST /ask. Without a key and a model, /ask answers 503.
+    openai_api_key: SecretStr | None = None
+    llm_model: str | None = None
+    llm_timeout_seconds: float = 60.0
+
+    # POST /ask limits, so a public demo cannot run up costs.
+    ask_requests_per_minute: int = 5  # per client IP
+    ask_requests_per_day: int = 200  # for the whole API
+    ask_log_path: str = "logs/ask.jsonl"
+
+    @property
+    def llm_configured(self) -> bool:
+        return bool(self.openai_api_key and self.llm_model)
 
     @property
     def cors_origins(self) -> list[str]:
