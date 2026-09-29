@@ -1,11 +1,19 @@
-streamlit
+# Data generation and loading
 pandas
-matplotlib
-openai
+pyarrow
+Faker
 google-cloud-bigquery
 db-dtypes
 python-dotenv
-prefect
-dbt-bigquery
-Faker
-fakeredis[aioredis]<2.20.0
+
+# Transformation
+dbt-bigquery>=1.8,<2
+
+# Tests
+pytest
+pyyaml
+
+# Legacy Streamlit app (agent/), removed when the new frontend replaces it
+streamlit
+matplotlib
+openai

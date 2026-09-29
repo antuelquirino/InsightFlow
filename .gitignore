@@ -1,0 +1,26 @@
+# Secrets
+.env
+.streamlit/secrets.toml
+*.json.key
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Generated data (python -m data_generation.build --dry-run)
+data_generation/output/
+
+# dbt artifacts
+dbt_insightflow/target/
+dbt_insightflow/logs/
+dbt_insightflow/dbt_packages/
+dbt_insightflow/.user.yml
+logs/
+
+# Working notes kept out of the repo
+prompts/
+
+# Streamlit app output
+chart.png

@@ -10,3 +10,11 @@ insightflow_dbt:
       threads: 4
       timeout_seconds: 300
       location: EU
+    # Used by CI for `dbt parse` only; parsing never opens a connection.
+    ci:
+      type: bigquery
+      method: oauth
+      project: insightflow-analytics-489617
+      dataset: dbt
+      threads: 1
+      location: EU
