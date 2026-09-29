@@ -11,13 +11,27 @@ y servir de base de aprendizaje para el estilo de frontend que después se va a
 reutilizar en demos para pymes.
 
 ## Estado de la reforma
-- [ ] Fase 1: datos sintéticos estáticos con historia y dbt reorganizado
+- [x] Fase 1: datos sintéticos estáticos con historia y dbt reorganizado
 - [ ] Fase 2: API en FastAPI (métricas y agente)
 - [ ] Fase 3: frontend en Next.js
 - [ ] Fase 4: despliegue (API en Cloud Run, frontend en Vercel)
 
 La app anterior en Streamlit (`agent/`) se mantiene funcionando hasta que el nuevo
 frontend la reemplace, y después se elimina.
+
+## Estado de los datos (Fase 1)
+- **Dataset publicado:** semilla 42, ventana 2024-09 a 2026-08. Para reproducirlo
+  hay que pasar `--end-month 2026-08`: sin ese flag el generador termina en el
+  último mes completo y los números de `docs/data-stories.md` cambian.
+- **Marts nuevos** (los únicos que usan la API y el agente): `kpi_summary`,
+  `fct_mrr_monthly`, `fct_mrr_movements`, `fct_churn`, `fct_retention_cohorts`,
+  `fct_unit_economics`, `dim_organizations`. Sus descripciones están en
+  `dbt_insightflow/models/marts/schema.yml` y son el contexto del agente.
+- **Tablas heredadas en `dbt_marts`** (`fact_*`, `kpi_active_companies`,
+  `kpi_churn_rate`, `kpi_mrr_growth`): congeladas, solo para la app Streamlit.
+  dbt ya no las gestiona; se borran junto con `agent/`.
+- **Credenciales:** tanto el generador como dbt usan Application Default
+  Credentials (`gcloud auth application-default login`).
 
 ## Decisiones tomadas
 - **Sin ejecución programada.** Se elimina la generación diaria (GitHub Actions
@@ -64,8 +78,9 @@ agent/             app Streamlit anterior (se elimina al final)
 6. **Commits pequeños,** uno por paso completado.
 
 ## Comandos (se completan a medida que se construyen)
-- Generar y cargar datos: `python -m data_generation.build`
-- dbt: `cd dbt_insightflow && dbt build`
+- Generar y cargar datos: `python -m data_generation.build --end-month 2026-08`
+  (`--dry-run` solo escribe Parquet en `data_generation/output/`)
+- dbt: `cd dbt_insightflow && dbt build --profiles-dir .`
 - Tests de Python: `pytest`
 - Chequeo de dbt sin BigQuery (lo que corre el CI):
   `cd dbt_insightflow && dbt parse --profiles-dir .`

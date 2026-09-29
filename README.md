@@ -1,150 +1,163 @@
-# InsightFlow: AI-Powered SaaS Analytics Platform
+# InsightFlow
 
-InsightFlow is an end-to-end data platform that simulates, processes, and analyzes SaaS business data using a modern data stack. It combines automated data pipelines, cloud data warehousing, transformation with dbt, and an AI-powered analytics interface that enables natural language querying over business metrics.
+An analytics platform for a fictional B2B SaaS company: realistic synthetic
+data in BigQuery, modeled with dbt into business metrics (MRR, churn,
+retention, unit economics), to be served by an API to a web dashboard and an
+AI agent that answers business questions in plain English.
 
-## Live Application:
-https://insightflow-agent2.streamlit.app/
+The data is not random noise. It is generated to hide five business stories
+(a price increase that backfires, a channel that brings customers who leave
+fast, expansion revenue that outweighs churn, usage that fades before a
+cancellation, seasonality) so that the dashboard and the agent have something
+real to find.
 
-## Architecture Overview
+## Status
 
-The project follows a modular and production-oriented architecture based on the Modern Data Stack:
+The project is being rebuilt in four phases:
 
-### Data Generation & Ingestion
-Custom Python scripts generate realistic SaaS data (organizations, users, subscriptions, product events) using synthetic data techniques. The pipeline supports both full refresh and incremental data loading.
+- [x] **Phase 1 — Data:** deterministic synthetic history and layered dbt models
+- [ ] **Phase 2 — API:** FastAPI service for metrics and the agent
+- [ ] **Phase 3 — Web:** Next.js dashboard and chat
+- [ ] **Phase 4 — Deploy:** API on Cloud Run, web on Vercel
 
-### Orchestration & Automation
-Workflows are automated using GitHub Actions, enabling scheduled daily runs for data generation, ingestion, and transformation.
+The previous version, a Streamlit app in `agent/`, is still
+[live](https://insightflow-agent2.streamlit.app/) on the legacy tables until
+the new web app replaces it.
 
-### Data Warehouse
-Google BigQuery is used as the centralized data warehouse, optimized with partitioning and clustering for performance and cost efficiency.
+## Architecture
 
-### Data Transformation (dbt)
-dbt is used to structure the data into layered models:
-
-### Staging: Cleaned and standardized data
-Marts (Core): Fact and dimension tables
-Marts (KPI): Business-ready metrics such as MRR, churn rate, and active companies
-
-### AI Analytics Layer
-A Streamlit application integrates with the OpenAI API to allow users to query the data using natural language. The system translates user questions into SQL queries and returns results, charts, and insights.
-
-### Tech Stack
-
-Language: Python 3.11
-
-Data Warehouse: Google BigQuery
-
-Transformation: dbt (dbt-bigquery)
-
-AI / LLM: OpenAI API
-
-Frontend: Streamlit
-
-Orchestration & Automation: GitHub Actions
-
-Data Generation: Faker (Synthetic Data)
-
-###  Project Structure
-
-```text
-.
-├── .github/workflows/      # CI/CD pipelines (scheduled data runs)
-├── agent/                  # Streamlit app and AI agent logic
-│   ├── app.py              # UI entry point
-│   ├── agent.py            # LLM + SQL generation logic
-│   └── bq_client.py        # BigQuery client wrapper
-├── data_generation/        # Synthetic data generation & ingestion
-├── dbt_insightflow/        # dbt project
-│   ├── models/             # Staging, marts, and KPI models
-│   ├── profiles.yml        # dbt connection profiles
-│   └── dbt_project.yml     # dbt configuration
-├── requirements.txt        # Project dependencies
-└── orchestrator.py         # Prefect flow / Pipeline execution
+```mermaid
+flowchart LR
+    gen["data_generation<br/>seeded simulation"] -->|full refresh| raw[(raw)]
+    raw --> stg[(dbt_staging<br/>typed views)]
+    stg --> int[(dbt_intermediate<br/>one calculation per model)]
+    int --> marts[(dbt_marts<br/>documented metrics)]
+    marts -.->|Phase 2| api["FastAPI"]
+    api -.->|Phase 3| web["Next.js dashboard + agent"]
 ```
 
-### Data Model
+- **Generation:** a month-by-month simulation of a customer base: 14-day trials,
+  conversions, plan and seat changes, a price change, churn, reactivations,
+  invoices, weekly product usage and marketing spend. The same seed always
+  produces the same data.
+- **Storage:** Google BigQuery (EU). Data is generated once and loaded by hand;
+  nothing runs on a schedule.
+- **Transformation:** dbt Core with dbt-bigquery, in three layers. Every mart
+  model and column is documented; those descriptions will be the agent's
+  context.
 
-The transformation layer is organized into three levels:
+## The data
 
-Staging (dbt_staging)
-Cleaned versions of raw tables with standardized formats and data validation.
-Core Marts (dbt_marts)
-fact_product_events
-fact_subscriptions
-fact_mrr
-dim_organizations
-KPI Layer (dbt_marts)
-kpi_mrr_growth
-kpi_churn_rate
-kpi_active_companies
+24 months, September 2024 to August 2026. By the end: 458 paying customers,
+$297k MRR ($3.6M ARR) and 124% net revenue retention.
 
-This structure separates raw ingestion, business logic, and analytics consumption.
+| Table | Content |
+|---|---|
+| `organizations` | 1,183 companies that started a trial, with industry, country, size and acquisition channel |
+| `plans` | Starter, Pro and Enterprise per-seat prices, with price history |
+| `subscriptions` | One row per subscription period; any plan, seat or price change opens a new one |
+| `invoices` | Monthly invoices, paid, failed or refunded |
+| `product_events` | Weekly activity per company: active users, logins, dashboards, queries, exports |
+| `marketing_spend` | Monthly spend per acquisition channel |
 
-### Key Features
+### Stories hidden in the data
 
-### Automated Data Pipeline
-Daily data generation and ingestion fully automated via GitHub Actions.
+| # | Story | Question that reveals it |
+|---|---|---|
+| 1 | The Starter price increase in November 2025 more than doubles Starter churn for three months | *What happened to Starter churn after the price change?* |
+| 2 | Paid ads customers churn about twice as often in their first six months; LTV:CAC of 2.5 vs 15+ elsewhere | *Which acquisition channel loses the most customers in their first six months?* |
+| 3 | Enterprise seat expansion pushes NRR to 124% while a quarter of customers leave | *Why is net revenue retention above 100% if we are losing customers?* |
+| 4 | Usage fades 6 to 10 weeks before a customer churns; a risk flag catches it | *Which customers are at risk of churning?* |
+| 5 | Fewer signups in December and January, a peak in March | *In which months do we sign up the most new customers?* |
 
-### Incremental Processing
-Efficient incremental loading strategy to simulate real SaaS data growth while avoiding duplication.
+Each story, its figures and how it is tested: [docs/data-stories.md](docs/data-stories.md).
 
-### Production-Ready dbt Models
-Well-structured transformations with testing, modular design, and clear separation of concerns.
+## dbt models
 
-### Natural Language Querying
-Users can ask business questions (e.g., “What is our MRR growth?”), and the system generates and executes SQL queries automatically.
+| Layer | Dataset | Models |
+|---|---|---|
+| Staging | `dbt_staging` | One typed view per raw table |
+| Intermediate | `dbt_intermediate` | Month spine, MRR per company per month, MRR movements, weekly activity with trends, acquisition cohorts |
+| Marts | `dbt_marts` | See below |
 
-### AI-Generated Insights
-Query results are enriched with automatically generated business insights.
+| Mart | One row per | What it answers |
+|---|---|---|
+| `kpi_summary` | month | Headline KPIs and their change against the previous month |
+| `fct_mrr_monthly` | month × plan × channel × company size | MRR and ARR with any breakdown |
+| `fct_mrr_movements` | month | MRR bridge: new, expansion, contraction, churn, reactivation |
+| `fct_churn` | month × total / plan / channel | Logo and revenue churn |
+| `fct_retention_cohorts` | cohort × months since first payment | Logo and revenue retention matrix |
+| `fct_unit_economics` | month × channel | CAC, ARPA, LTV, LTV:CAC, payback |
+| `dim_organizations` | company | Current status, MRR, usage trend and churn risk |
 
-### Getting Started
-1. Prerequisites
-Google Cloud Project with BigQuery enabled
-Service Account with appropriate permissions
-OpenAI API Key
-2. Environment Configuration
+## Getting started
 
-Configure credentials using Streamlit secrets or a local .env file:
+Requirements: Python 3.11+, a Google Cloud project with BigQuery, and the
+`gcloud` CLI.
 
-OPENAI_API_KEY=your_openai_key
-
-[gcp_service_account]
-type = "service_account"
-project_id = "your_project_id"
-...
-3. Installation
+```bash
 pip install -r requirements.txt
-4. Run Data Pipeline
-python generate_data.py
+gcloud auth application-default login    # used by the generator and dbt
+```
 
-or rely on scheduled execution via GitHub Actions.
+Generate the data locally (Parquet files in `data_generation/output/`, no
+BigQuery needed):
 
-5. Launch AI Interface
-streamlit run agent/app.py
-CI/CD
+```bash
+python -m data_generation.build --dry-run --end-month 2026-08
+```
 
-The project includes automated workflows using GitHub Actions that:
+Generate and load it into BigQuery (replaces every `raw` table):
 
-Run the data generation pipeline
-Load data into BigQuery
-Execute dbt transformations
-Keep the dataset updated daily
-Use Cases
-SaaS analytics simulation and prototyping
-Demonstration of modern data stack architecture
-AI-powered business intelligence interface
-Portfolio project for data engineering / analytics engineering roles
-License
+```bash
+python -m data_generation.build --end-month 2026-08
+```
 
-This project is licensed under the MIT License.
+Without `--end-month`, the window ends in the last complete month, so dates and
+figures differ from the ones documented here. Use `--seed` for another dataset
+that tells the same stories with different numbers.
 
+Build and test the dbt models:
+
+```bash
+cd dbt_insightflow
+dbt build --profiles-dir .
+```
+
+The project ID and region are set in `data_generation/config.py` and
+`dbt_insightflow/profiles.yml`.
+
+## Tests
+
+- **Python** (`pytest`): the generator is deterministic, keys and relationships
+  hold, subscription periods form a valid chain, prices and invoices match,
+  and each of the five stories shows up in the data.
+- **dbt** (`dbt build`): keys, accepted values and relationships, plus business
+  rules: the MRR bridge closes every month, all marts agree on MRR and
+  customer counts, subscription periods never overlap, and rates stay in range.
+- **CI** (GitHub Actions): pytest and `dbt parse` on every push, without
+  connecting to BigQuery.
+
+## Cost
+
+The whole dataset is a few MB. A full `dbt build` processes about 10 MB; since
+BigQuery bills at least 10 MB per table read, it is billed as roughly 1 GB,
+under one cent at on-demand prices and inside the monthly free tier. dbt
+queries are capped with `maximum_bytes_billed`.
+
+## Project structure
+
+```text
+data_generation/   seeded simulation and BigQuery loader (python -m data_generation.build)
+dbt_insightflow/   dbt project: staging → intermediate → marts, tests
+docs/              data stories
+tests/             pytest: generator invariants and data stories
+agent/             legacy Streamlit app (to be replaced)
+```
 
 ## Author
 
-**Antuel Quirino** *Analitycs Engineer & AI Enthusiast*
+**Antuel Quirino**, Analytics Engineer
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](www.linkedin.com/in/antuel-quirino)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/antuel-quirino)
 [![GitHub](https://img.shields.io/badge/GitHub-100000?style=for-the-badge&logo=github&logoColor=white)](https://github.com/antuelquirino)
-
----
-*Project developed as part of a Modern Data Stack exploration.*
