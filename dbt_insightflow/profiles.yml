@@ -3,18 +3,13 @@ insightflow_dbt:
   outputs:
     dev:
       type: bigquery
-      method: service-account
-      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS') }}"
+      # Application Default Credentials: `gcloud auth application-default login`,
+      # or GOOGLE_APPLICATION_CREDENTIALS pointing to a service account key.
+      # `dbt parse` (what CI runs) never opens a connection.
+      method: oauth
       project: insightflow-analytics-489617
       dataset: dbt
       threads: 4
       timeout_seconds: 300
       location: EU
-    # Used by CI for `dbt parse` only; parsing never opens a connection.
-    ci:
-      type: bigquery
-      method: oauth
-      project: insightflow-analytics-489617
-      dataset: dbt
-      threads: 1
-      location: EU
+      maximum_bytes_billed: 1000000000

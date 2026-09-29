@@ -23,4 +23,4 @@ jobs:
 
       - name: dbt parse (no BigQuery connection)
         working-directory: dbt_insightflow
-        run: dbt parse --target ci --profiles-dir .
+        run: dbt parse --profiles-dir .

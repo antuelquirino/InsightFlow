@@ -68,6 +68,6 @@ agent/             app Streamlit anterior (se elimina al final)
 - dbt: `cd dbt_insightflow && dbt build`
 - Tests de Python: `pytest`
 - Chequeo de dbt sin BigQuery (lo que corre el CI):
-  `cd dbt_insightflow && dbt parse --target ci --profiles-dir .`
+  `cd dbt_insightflow && dbt parse --profiles-dir .`
 - API: `uvicorn api.main:app --reload`
 - Frontend: `cd web && npm run dev`
