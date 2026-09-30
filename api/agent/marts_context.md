@@ -4,6 +4,7 @@ BigQuery tables describing InsightFlow, a B2B SaaS company. Data covers 2024-09 
 
 Conventions for every table:
 - Month columns hold the first day of the month; values are as of the month end.
+  To match a date (such as a price change) to a month row, use DATE_TRUNC(date, MONTH).
 - Money is USD. Rates and ratios are fractions (0.05 = 5%), never percentages.
 - A paying customer is an organization with a paid (non-trial) subscription.
 - The company launched with the data window, so the first months have very few
@@ -26,7 +27,7 @@ Columns:
 
 ## `insightflow-analytics-489617.dbt_marts.fct_mrr_movements`
 
-Monthly MRR bridge, one row per month. starting_mrr + new_mrr + expansion_mrr + contraction_mrr + churned_mrr + reactivation_mrr = ending_mrr, and starting_mrr equals the previous month's ending_mrr. Losses (contraction, churn) are negative numbers. Price increases for existing customers count as expansion (the Starter price change of November 2025 shows up here).
+Monthly MRR bridge, one row per month. starting_mrr + new_mrr + expansion_mrr + contraction_mrr + churned_mrr + reactivation_mrr = ending_mrr, and starting_mrr equals the previous month's ending_mrr. Losses (contraction, churn) are negative numbers. Price increases for existing customers count as expansion (dim_plans says when prices changed).
 
 Columns:
 - month (DATE): First day of the month.
@@ -48,7 +49,7 @@ Columns:
 
 ## `insightflow-analytics-489617.dbt_marts.fct_churn`
 
-Logo churn and revenue churn per month, in total and broken down by plan or by acquisition channel. Filter on breakdown ('total', 'plan' or 'channel') and read breakdown_value. A customer counts under the plan it had at the previous month end, so upgrades and downgrades are never churn. Amounts here are positive USD. Monthly churn is noisy for small groups; average several months before drawing conclusions.
+Logo churn and revenue churn per month, in total and broken down by plan or by acquisition channel. Filter on breakdown ('total', 'plan' or 'channel') and read breakdown_value. A customer counts under the plan it had at the previous month end, so upgrades and downgrades are never churn. Amounts here are positive USD. Monthly churn is noisy for small groups: to compare plans or channels, aggregate at least 12 months, as sum(churned_customers) / sum(customers_at_start); for channels, fct_unit_economics.monthly_logo_churn_rate already holds that trailing 12-month rate. To study the effect of a price change, take its date from dim_plans.valid_from and compare the months before and after it.
 
 Columns:
 - month (DATE): First day of the month.
@@ -142,10 +143,23 @@ Columns:
 - net_new_mrr (NUMERIC): MRR change against the previous month in USD.
 - logo_churn_rate (FLOAT64): Share of last month's customers who stopped paying this month.
 - gross_mrr_churn_rate (NUMERIC): MRR lost to churn and contraction / MRR at the start of the month.
-- nrr (NUMERIC): Net revenue retention over 12 months: MRR now of the customers who were paying 12 months earlier / their MRR back then. Above 1 means existing customers grow revenue even after churn. Null for the first 12 months.
+- nrr (NUMERIC): Net revenue retention over 12 months: MRR now of the customers who were paying 12 months earlier / their MRR back then. Above 1 means existing customers grow revenue even after churn. Null for the first 12 months. To explain it, compare expansion_mrr with churned_mrr and contraction_mrr in fct_mrr_movements, or NRR by plan.
 - logo_retention_12m (FLOAT64): Share of the customers paying 12 months earlier who still pay.
 - mrr_growth_rate (NUMERIC): MRR change against the previous month, as a fraction of last month's MRR.
 - paying_customers_change (INT64): Change in paying customers against the previous month.
 - arpa_growth_rate (NUMERIC): ARPA change against the previous month, as a fraction.
 - logo_churn_rate_change (FLOAT64): Logo churn rate minus the previous month's (in fraction points).
 - nrr_change (NUMERIC): NRR minus the previous month's (in fraction points).
+
+## `insightflow-analytics-489617.dbt_marts.dim_plans`
+
+Price history of each plan, one row per price version. A price change closes the old row (valid_to) and opens a new one (valid_from) on the same day; it applies to new and existing customers from that day. Price changes are the rows where previous_monthly_price_per_seat is not null, and valid_from is the date of the change.
+
+Columns:
+- plan_id (STRING): Plan identifier. Values: 'starter', 'pro', 'enterprise'.
+- plan_name (STRING): Display name of the plan.
+- monthly_price_per_seat (NUMERIC): Price in USD per seat per month.
+- previous_monthly_price_per_seat (NUMERIC): Price per seat before this version; null for the plan's first price.
+- valid_from (DATE): First day this price applies.
+- valid_to (DATE): Day this price stopped applying (the next price starts that day); null if current.
+- is_current_price (BOOL): True for the price that applies today.

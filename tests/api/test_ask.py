@@ -9,7 +9,7 @@ from google.api_core.exceptions import BadRequest
 from api.bigquery import MartsClient
 from api.llm import LLMError
 from api.main import create_app
-from tests.api.fakes import FailingBigQueryClient, FakeBigQueryClient, FakeLLM
+from tests.api.fakes import FailingBigQueryClient, FakeBigQueryClient, FakeLLM, SequenceBigQueryClient
 
 QUESTION = "What happened to Starter churn after the price change?"
 GOOD_SQL = {"sql": "SELECT month, logo_churn_rate FROM fct_churn WHERE breakdown_value = 'starter' ORDER BY month", "cannot_answer": None}
@@ -80,6 +80,33 @@ def test_bigquery_error_is_retried_once(ask_settings):
     body = make_client(ask_settings, llm, bq).post("/ask", json={"question": QUESTION}).json()
     assert body["status"] == "answered"
     assert "Unrecognized name: churn_rate" in llm.calls[1][-1]["content"]
+
+
+OTHER_SQL = {"sql": "SELECT month, logo_churn_rate FROM fct_churn WHERE breakdown = 'plan' ORDER BY month"}
+
+
+def test_empty_result_is_retried_once(ask_settings):
+    llm = FakeLLM(GOOD_SQL, OTHER_SQL, GOOD_ANSWER)
+    bq = SequenceBigQueryClient([], ROWS)
+    body = make_client(ask_settings, llm, bq).post("/ask", json={"question": QUESTION}).json()
+    assert body["status"] == "answered" and body["rows"]
+    assert "no rows" in llm.calls[1][-1]["content"]
+    assert [a["error"] for a in read_log(ask_settings)[0]["attempts"]] == ["empty: the query returned no rows", None]
+
+
+def test_empty_result_twice_answers_that_nothing_matched(ask_settings):
+    no_data = {"answer": "No data matched the question.", "insight": None, "chart": None}
+    llm = FakeLLM(GOOD_SQL, OTHER_SQL, no_data)
+    body = make_client(ask_settings, llm, SequenceBigQueryClient([])).post("/ask", json={"question": QUESTION}).json()
+    assert body["status"] == "answered" and body["rows"] == []
+    assert body["answer"] == "No data matched the question."
+
+
+def test_empty_result_then_invalid_query_keeps_the_empty_result(ask_settings):
+    no_data = {"answer": "No data matched the question.", "insight": None, "chart": None}
+    llm = FakeLLM(GOOD_SQL, {"sql": "DROP TABLE fct_churn"}, no_data)
+    body = make_client(ask_settings, llm, SequenceBigQueryClient([])).post("/ask", json={"question": QUESTION}).json()
+    assert body["status"] == "answered" and "fct_churn" in body["sql"]
 
 
 def test_two_failures_end_with_a_clear_message(ask_settings):

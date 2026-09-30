@@ -28,12 +28,12 @@ def test_committed_context_is_up_to_date():
     assert context.CONTEXT_MD.read_text(encoding="utf-8") == expected, FIX
 
 
-def test_allowlist_is_the_seven_marts():
+def test_allowlist_is_the_marts():
     schema = context.load_schema()
     prefix = f"{schema['project']}.{schema['dataset']}."
     assert context.allowed_tables() == {
         prefix + name for name in [
             "kpi_summary", "fct_mrr_monthly", "fct_mrr_movements", "fct_churn",
-            "fct_retention_cohorts", "fct_unit_economics", "dim_organizations",
+            "fct_retention_cohorts", "fct_unit_economics", "dim_organizations", "dim_plans",
         ]
     }

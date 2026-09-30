@@ -65,7 +65,7 @@ $297k MRR ($3.6M ARR) and 124% net revenue retention.
 | # | Story | Question that reveals it |
 |---|---|---|
 | 1 | The Starter price increase in November 2025 more than doubles Starter churn for three months | *What happened to Starter churn after the price change?* |
-| 2 | Paid ads customers churn about twice as often in their first six months; LTV:CAC of 2.5 vs 15+ elsewhere | *Which acquisition channel loses the most customers in their first six months?* |
+| 2 | Paid ads customers churn about twice as often in their first six months; LTV:CAC of 2.5 vs 15+ elsewhere | *Which acquisition channel has the highest churn rate, and how do the unit economics compare?* |
 | 3 | Enterprise seat expansion pushes NRR to 124% while a quarter of customers leave | *Why is net revenue retention above 100% if we are losing customers?* |
 | 4 | Usage fades 6 to 10 weeks before a customer churns; a risk flag catches it | *Which customers are at risk of churning?* |
 | 5 | Fewer signups in December and January, a peak in March | *In which months do we sign up the most new customers?* |

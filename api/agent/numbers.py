@@ -5,8 +5,9 @@ the text shows it, gives that number: 0.0918 supports "9.2%" and "9%", 297287
 supports "$297,287", "$297k" and "$0.3M", 2.5 supports "2.5x". Signs are
 ignored ("lost $5,160" for -5160). Small integers (up to 12: "3 months",
 "12-month NRR"), numbers from the question and the parts of dates in the rows
-are always allowed. Anything else, such as a difference or a ratio the model
-worked out itself, is reported.
+are always allowed, and so are the reference values 0, 1 and 100 ("NRR above
+100%"). Anything else, such as a difference or a ratio the model worked out
+itself, is reported.
 """
 from __future__ import annotations
 
@@ -21,6 +22,8 @@ NUMBER = re.compile(
 )
 SCALES = {"k": 1e3, "m": 1e6, "b": 1e9}
 ALWAYS_ALLOWED_MAX = 12
+# Thresholds such as "above 1.0" or "100%", as (value, unit).
+REFERENCE_VALUES = {(0.0, None), (0.0, "%"), (1.0, None), (100.0, "%")}
 
 
 @dataclass(frozen=True)
@@ -44,12 +47,17 @@ def mentions(text: str) -> list[Mention]:
 def unsupported_numbers(text: str, rows: list[dict[str, Any]], question: str = "") -> list[str]:
     """Numbers in `text` that no value in `rows` supports."""
     values = [abs(float(v)) for v in _row_values(rows)]
-    allowed = {m.value for m in mentions(question)} | set(_date_parts(rows))
+    allowed = (
+        {(m.value, m.unit) for m in mentions(question)}
+        | {(float(part), None) for part in _date_parts(rows)}
+        | REFERENCE_VALUES
+    )
     unsupported = []
     for mention in mentions(text):
-        if mention.unit is None and mention.decimals == 0:
-            if mention.value <= ALWAYS_ALLOWED_MAX or mention.value in allowed:
-                continue
+        if (mention.value, mention.unit) in allowed:
+            continue
+        if mention.unit is None and mention.decimals == 0 and mention.value <= ALWAYS_ALLOWED_MAX:
+            continue
         if not any(_supports(value, mention) for value in values):
             unsupported.append(mention.text)
     return unsupported

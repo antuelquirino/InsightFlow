@@ -46,11 +46,12 @@ def test_story_1_starter_price_change(client):
     text = text_of(body)
     assert "starter" in text
     assert re.search(r"doubl|rose|increas|spik|jump|higher", text)
+    assert "november" in text  # the date of the change comes from dim_plans
     assert "fct_churn" in body["sql"] or "starter" in body["sql"].lower()
 
 
 def test_story_2_paid_ads_customers_leave_fast(client):
-    body = ask(client, "Which acquisition channel loses the most customers, and how do the unit economics compare by channel?")
+    body = ask(client, "Which acquisition channel has the highest churn rate, and how do the unit economics compare by channel?")
     assert "paid" in text_of(body)
 
 

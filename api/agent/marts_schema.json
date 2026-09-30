@@ -115,6 +115,15 @@
       "arpa_growth_rate": "NUMERIC",
       "logo_churn_rate_change": "FLOAT64",
       "nrr_change": "NUMERIC"
+    },
+    "dim_plans": {
+      "plan_id": "STRING",
+      "plan_name": "STRING",
+      "monthly_price_per_seat": "NUMERIC",
+      "previous_monthly_price_per_seat": "NUMERIC",
+      "valid_from": "DATE",
+      "valid_to": "DATE",
+      "is_current_price": "BOOL"
     }
   }
 }

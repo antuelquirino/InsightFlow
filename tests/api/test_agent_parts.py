@@ -40,6 +40,32 @@ def test_unsupported_numbers(text, invented):
 
 def test_numbers_from_the_question_are_allowed():
     assert unsupported_numbers("Over the last 24 months churn was 9.2%.", ROWS, "Churn in the last 24 months?") == []
+    assert unsupported_numbers("NRR is above 100%.", ROWS, "Why is NRR above 100%?") == []
+
+
+def test_reference_values_are_allowed_only_in_their_natural_form():
+    assert unsupported_numbers("NRR stayed above 1.0, that is above 100%.", ROWS) == []
+    assert unsupported_numbers("Churn was 1% and 0%.", ROWS) == ["1%"]
+
+
+def test_date_parts_do_not_support_percentages():
+    # The rows have January 1 dates, but "1" does not make "25%" or "2026%" valid.
+    assert unsupported_numbers("Churn was 25% in 2026.", ROWS) == ["25%"]
+
+
+def test_chart_series_on_different_scales_are_not_mixed():
+    from api.agent.pipeline import checked_chart
+    from api.schemas import Chart
+
+    rows = [{"channel": "paid_ads", "churn": 0.062, "ltv_to_cac": 2.5, "cac": 2339.0},
+            {"channel": "organic", "churn": 0.029, "ltv_to_cac": 21.5, "cac": 855.0}]
+    columns = list(rows[0])
+    mixed = checked_chart(Chart(type="bar", x="channel", y=["churn", "cac"]), columns, rows)
+    assert mixed.y == ["churn"]
+    close = checked_chart(Chart(type="bar", x="channel", y=["ltv_to_cac", "churn"]), columns, rows)
+    assert close.y == ["ltv_to_cac"]  # 21.5 vs 0.062 is too far apart as well
+    too_many = checked_chart(Chart(type="bar", x="channel", y=["cac", "cac", "cac"]), columns, rows)
+    assert too_many.y == ["cac", "cac"]
 
 
 def _openai_stub(content):

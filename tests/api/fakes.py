@@ -37,6 +37,19 @@ class FakeLLM:
         return reply
 
 
+class SequenceBigQueryClient(FakeBigQueryClient):
+    """Returns each result set in turn (the last one repeats)."""
+
+    def __init__(self, *results):
+        super().__init__()
+        self.results = list(results)
+
+    def query(self, sql, job_config=None):
+        self.calls.append((sql, job_config))
+        rows = self.results.pop(0) if len(self.results) > 1 else self.results[0]
+        return _FakeJob(rows)
+
+
 class FailingBigQueryClient(FakeBigQueryClient):
     """Raises the given errors on the first queries, then returns rows."""
 

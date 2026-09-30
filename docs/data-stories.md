@@ -92,8 +92,12 @@ economics make it the weakest channel by far (August 2026, trailing 12 months,
 periods; `fct_churn` by channel; `fct_unit_economics` (LTV and payback by
 channel); `fct_retention_cohorts`.
 
-**Question that reveals it:** *"Which acquisition channel loses the most customers
-in their first six months?"*
+**Question that reveals it:** *"Which acquisition channel has the highest churn
+rate, and how do the unit economics compare?"* The marts hold monthly churn by
+channel (paid ads 6.2% a month over the last 12 months, organic 2.9%) rather
+than churn by customer age, so the first-six-months effect itself is visible in
+the raw data and the tests, and in the marts as higher churn and weaker unit
+economics for paid ads.
 
 **Levers:** `PAID_ADS_EARLY_CHURN_MULTIPLIER`, `PAID_ADS_EARLY_MONTHS`,
 `CHANNEL_MIX_START`, `CHANNEL_MIX_END`, `SPEND_START`, `SPEND_END`.

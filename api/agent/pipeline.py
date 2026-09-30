@@ -2,9 +2,10 @@
 
 1. The LLM writes BigQuery SQL from the marts context (or says the question
    cannot be answered with this data).
-2. sql_guard validates it. If validation or execution fails, the error goes
-   back to the LLM for one corrected attempt; a second failure ends the request
-   with a clear message.
+2. sql_guard validates it. If validation or execution fails, or the query
+   returns no rows (usually a wrong filter), the problem goes back to the LLM
+   for one corrected attempt; a second failure ends the request with a clear
+   message (or, after an empty result, answers that no data matched).
 3. BigQuery runs the query with the byte cap (MartsClient).
 4. A second LLM call sees the real rows and writes the answer, an insight and a
    chart suggestion, using only numbers found in the rows. If it cites any other
@@ -29,6 +30,8 @@ from api.llm import LLM, LLMError
 from api.schemas import Chart
 
 ROWS_SHOWN_TO_LLM = 200
+MAX_SERIES = 2  # more lines or bar groups than this stop being readable
+MAX_SCALE_RATIO = 20  # series further apart than this cannot share an axis
 
 SQL_PROMPT = """You are a senior data analyst at InsightFlow, a B2B SaaS company. Write one \
 BigQuery Standard SQL query that answers the user's question with the tables described below.
@@ -38,7 +41,15 @@ Rules:
 - Prefer the most aggregated table that answers the question: kpi_summary for headline KPIs \
 per month, fct_churn for churn (filter on breakdown and breakdown_value), fct_mrr_movements for \
 MRR changes, fct_unit_economics for CAC, LTV and payback, dim_organizations for individual \
-customers.
+customers, dim_plans for prices and price changes.
+- When the question refers to an event such as a price change, look up its date (dim_plans) \
+and include it in the result, so the answer can place the event in time.
+- For a "why" question, return the columns that explain the figure, not only the figure.
+- For a "before and after" question, return one row per month from about 6 months before the event to 6 months after it, with the event date as a column; do not collapse it into a single row.
+- Never write a date or value in a filter unless the user gave it or you read it from a \
+table in the same query; derive event dates from the data (for example from dim_plans).
+- When the question names no period, look at the last 12 months rather than a single month, \
+and compare groups (plans, channels) by rates rather than counts unless counts are asked for.
 - Rates are fractions (0.05 = 5%). Keep them as fractions; do not multiply by 100.
 - Give every computed column a short snake_case alias. Order rows in a meaningful way \
 (usually by month). Return at most 500 rows; for a single figure, return one row.
@@ -60,16 +71,24 @@ fractions as percentages (0.0918 -> 9.2%).
 are not in the rows. Describe comparisons in words instead ("more than doubled", "fell").
 - If there are no rows, say that no data matched the question.
 
+Write numbers for people: money as whole dollars ($855) or with k/M for large amounts \
+($297k, $3.6M); rates as percentages with one decimal (9.2%); ratios with one decimal (2.5x); \
+months as "January 2026", never as dates like 2026-01-01.
+
 Write:
 - "answer": 1 to 3 sentences that answer the question directly, in the language of the question.
 - "insight": one short sentence on why it matters for the business, or null.
 - "chart": how to plot the rows. "type" is "line" (x is a month or date column), "bar" (x is a \
 category column), "number" (a single headline value; y is that column) or "table". "x" is one \
-column name from the rows (null for "number" and "table"); "y" is a list of numeric column names \
-from the rows (empty for "table").
+column name from the rows (null for "number" and "table"); "y" is one or two numeric column \
+names from the rows that share a scale, never money next to rates (empty for "table").
 
 Reply with a JSON object: {"answer": "...", "insight": "... or null", "chart": {"type": "...", \
-"x": "... or null", "y": ["..."]}}"""
+"x": "... or null", "y": ["..."]}}
+
+For reference, the tables the query can read and what each column means:
+
+"""
 
 FAILED_ANSWER = (
     "I couldn't build a reliable query for that question. Try rephrasing it, for example by "
@@ -121,7 +140,8 @@ class Analyst:
             {"role": "system", "content": SQL_PROMPT + marts_context()},
             {"role": "user", "content": question},
         ]
-        for _ in range(2):
+        empty_result = None  # a first query that ran but returned nothing, kept as a fallback
+        for attempt_number in (1, 2):
             attempt: dict[str, Any] = {"sql": None, "valid": False, "error": None}
             attempts.append(attempt)
             try:
@@ -140,19 +160,30 @@ class Analyst:
                 query = validate(draft.sql)
                 attempt["valid"] = True
                 rows = self.marts.query(query.sql)
-                break
             except SqlRejected as error:
                 attempt["error"] = f"rejected: {error}"
                 feedback = f"The query was rejected: {error}"
             except GoogleAPIError as error:
                 attempt["error"] = f"bigquery: {_first_line(error)}"
                 feedback = f"BigQuery could not run the query: {_first_line(error)}"
+            else:
+                if rows or attempt_number == 2:
+                    break
+                # No rows is usually a wrong filter, such as a guessed date: use the retry on it.
+                attempt["error"] = "empty: the query returned no rows"
+                empty_result = (query, rows)
+                feedback = (
+                    "The query ran but returned no rows. Check its filters and any hard-coded "
+                    "dates or values. If no rows is really the answer, send the same query again."
+                )
             messages += [
                 {"role": "assistant", "content": draft.model_dump_json()},
                 {"role": "user", "content": f"{feedback}\nWrite a corrected query. Reply with the same JSON format."},
             ]
         else:
-            return AskResult(status="failed", answer=FAILED_ANSWER, attempts=attempts)
+            if empty_result is None:
+                return AskResult(status="failed", answer=FAILED_ANSWER, attempts=attempts)
+            query, rows = empty_result
 
         columns = list(rows[0]) if rows else []
         result = AskResult(status="answered", answer=NEUTRAL_ANSWER, sql=query.sql,
@@ -171,7 +202,7 @@ class Analyst:
         if len(result.rows) > ROWS_SHOWN_TO_LLM:
             payload["note"] = f"Only the first {ROWS_SHOWN_TO_LLM} of {len(result.rows)} rows are shown."
         messages = [
-            {"role": "system", "content": ANSWER_PROMPT},
+            {"role": "system", "content": ANSWER_PROMPT + marts_context()},
             {"role": "user", "content": json.dumps(payload, default=str)},
         ]
         for _ in range(2):
@@ -210,8 +241,24 @@ def checked_chart(chart: Chart | None, columns: list[str], rows: list[dict[str, 
             return Chart(type="table")
         if chart.type == "number":
             return Chart(type="number", y=chart.y)
-        return chart
+        return chart.model_copy(update={"y": _same_scale(chart.y[:MAX_SERIES], rows)})
     return default_chart(columns, rows, numeric)
+
+
+def _same_scale(series: list[str], rows: list[dict[str, Any]]) -> list[str]:
+    """Drop series whose magnitude is far from the first one's (they would flatten on one axis)."""
+    def magnitude(column: str) -> float:
+        return max((abs(row[column]) for row in rows if row.get(column) is not None), default=0.0)
+
+    if not series:
+        return series
+    first = magnitude(series[0])
+    kept = [series[0]]
+    for column in series[1:]:
+        other = magnitude(column)
+        if first and other and max(first, other) / min(first, other) <= MAX_SCALE_RATIO:
+            kept.append(column)
+    return kept
 
 
 def default_chart(columns: list[str], rows: list[dict[str, Any]], numeric: list[str]) -> Chart:
@@ -221,7 +268,7 @@ def default_chart(columns: list[str], rows: list[dict[str, Any]], numeric: list[
     if rows and labels and numeric:
         x = labels[0]
         kind = "line" if any(word in x.lower() for word in ("month", "date", "week")) else "bar"
-        return Chart(type=kind, x=x, y=numeric[:3])
+        return Chart(type=kind, x=x, y=_same_scale(numeric[:MAX_SERIES], rows))
     return Chart(type="table")
 
 

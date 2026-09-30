@@ -28,6 +28,7 @@ CONTEXT_MD = AGENT_DIR / "marts_context.md"
 CONVENTIONS = """\
 Conventions for every table:
 - Month columns hold the first day of the month; values are as of the month end.
+  To match a date (such as a price change) to a month row, use DATE_TRUNC(date, MONTH).
 - Money is USD. Rates and ratios are fractions (0.05 = 5%), never percentages.
 - A paying customer is an organization with a paid (non-trial) subscription.
 - The company launched with the data window, so the first months have very few
