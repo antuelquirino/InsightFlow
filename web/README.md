@@ -1,50 +1,24 @@
-# Tremor – Dashboard
+# InsightFlow web
 
-`Dashboard` is a SaaS application template from [Tremor](https://tremor.so). It's built
-using [`Tremor Raw`](https://raw.tremor.so/docs/getting-started/installation)
-and [Next.js](https://nextjs.org).
-
-## Getting started
-
-1. Install the dependencies. We recommend using pnpm. If you want to use `npm`,
-   just replace `pnpm` with `npm`.
+The one-page dashboard of InsightFlow, in Next.js 16 (App Router), React 19,
+Tailwind CSS 4 and Recharts. See the [project README](../README.md) for what it
+shows and how the pieces fit.
 
 ```bash
-pnpm install
+cp .env.example .env.local   # where the API is
+npm install
+npm run dev                  # http://localhost:3000 (English), /es (Spanish)
+npm test                     # unit tests (Vitest)
+npm run lint && npm run typecheck && npm run build
 ```
 
-2. Then, start the development server:
-
-```bash
-pnpm run dev
-```
-
-3. Visit [http://localhost:3000](http://localhost:3000) in your browser to view
-   the template.
-
-## Notes
-
-This project uses
-[`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to
-automatically optimize and load Inter, a custom Google Font.
-
-This project uses
-[`Tremor Raw`](https://raw.tremor.so/docs/getting-started/installation)
-components for the UI.
-
-## License
-
-This site template is a commercial product and is licensed under the
-[Tremor License](https://blocks.tremor.so/license).
-
-## Learn more
-
-For a deeper understanding of the technologies used in this template, check out
-the resources listed below:
-
-- [Tremor Raw](https://raw.tremor.so) - Tremor Raw documentation
-- [Tailwind CSS](https://tailwindcss.com) - A utility-first CSS framework
-- [Next.js](https://nextjs.org/docs) - Next.js documentation
-- [Radix UI](https://www.radix-ui.com) - Radix UI Website
-- [Recharts](https://recharts.org) - Recharts documentation and website
-- [Tanstack](https://tanstack.com/table/latest) - TanStack table documentation
+- `src/app/`: the English (`/`) and Spanish (`/es`) pages, `/styleguide`, and
+  the design tokens in `globals.css`.
+- `src/components/dashboard/`: the page and its sections (server components,
+  each fetching its own data).
+- `src/components/insight/`: InsightFlow's components: lead finding, KPI strip,
+  charts, AI analyst, states and controls.
+- `src/components/`: base components from Tremor's open-source Dashboard
+  template (MIT, see `LICENSE.md`), restyled with the design tokens.
+- `src/lib/`: API client, formatting (`format.ts`, the only place numbers
+  become text), translations (`i18n.ts`) and data transformations.

@@ -2,8 +2,10 @@
 
 An analytics platform for a fictional B2B SaaS company: realistic synthetic
 data in BigQuery, modeled with dbt into business metrics (MRR, churn,
-retention, unit economics), served by an API to a web dashboard and an AI
-agent that answers business questions in plain English.
+retention, unit economics), served by an API to a one-page web dashboard with
+an AI analyst that answers business questions in plain English or Spanish.
+
+![The InsightFlow dashboard](docs/screenshots/dashboard-en.png)
 
 The data is not random noise. It is generated to hide five business stories
 (a price increase that backfires, a channel that brings customers who leave
@@ -17,7 +19,7 @@ The project is being rebuilt in four phases:
 
 - [x] **Phase 1 — Data:** deterministic synthetic history and layered dbt models
 - [x] **Phase 2 — API:** FastAPI service for metrics and the agent
-- [ ] **Phase 3 — Web:** Next.js dashboard and chat
+- [x] **Phase 3 — Web:** Next.js dashboard with the AI analyst, in English and Spanish
 - [ ] **Phase 4 — Deploy:** API on Cloud Run, web on Vercel
 
 The previous version, a Streamlit app in `agent/`, is still
@@ -34,7 +36,7 @@ flowchart LR
     int --> marts[(dbt_marts<br/>documented metrics)]
     marts --> api["FastAPI<br/>metrics + AI analyst"]
     llm["LLM"] <--> api
-    api -.->|Phase 3| web["Next.js dashboard + chat"]
+    api --> web["Next.js<br/>dashboard + AI analyst"]
 ```
 
 - **Generation:** a month-by-month simulation of a customer base: 14-day trials,
@@ -48,6 +50,8 @@ flowchart LR
 - **API:** FastAPI, the only way to reach BigQuery. Fixed, parameterized
   queries for the dashboard metrics, and an AI analyst that writes SQL,
   which is validated before it runs.
+- **Web:** Next.js 16, React 19, Tailwind 4 and Recharts, on components from
+  Tremor's open-source dashboard template, restyled with its own design system.
 
 ## The data
 
@@ -176,6 +180,47 @@ memory, since the data is static.
 logs every question, SQL attempt, validation result and duration to
 `logs/ask.jsonl`. The LLM provider is confined to `api/llm.py`.
 
+## Web
+
+One page, top to bottom:
+
+1. **Ask InsightFlow**, the AI analyst, first: a question in plain language (or
+   one of four suggested questions that lead to the data stories) returns the
+   answer, a chart drawn with the dashboard's own components, the result table
+   and the SQL it ran.
+2. The month's finding as a sentence and the headline KPIs (MRR, ARR, NRR,
+   logo churn, paying customers) with their change against the previous month.
+3. Six sections, each titled with what it shows: MRR trend, last month's MRR
+   bridge (waterfall), MRR by plan, Starter churn against the other plans,
+   return per acquisition channel (LTV to CAC), and customers whose usage is
+   fading.
+
+A 6 / 12 / 24-month period filter, light and dark themes, and English (`/`) or
+Spanish with Argentine formats (`/es`), all in the URL so a link opens the same
+view. Every number comes from the API; chart titles are findings built from it.
+
+| Dark mode, Spanish | Phone |
+|---|---|
+| ![Dashboard in Spanish, dark mode](docs/screenshots/dashboard-es-dark.png) | ![Dashboard on a phone](docs/screenshots/mobile-es.png) |
+
+![An answer from the AI analyst](docs/screenshots/ask.png)
+
+**Design system** ("an analyst's report"): warm neutrals, one ochre accent, gain
+and loss colors reserved for improves and worsens, data colors validated for
+colorblind separation, Newsreader for findings and IBM Plex Sans for the
+interface and numbers. Tokens live as CSS variables in `web/src/app/globals.css`;
+`/styleguide` documents them.
+
+```bash
+cd web
+cp .env.example .env.local   # API_URL and NEXT_PUBLIC_API_URL point to the API
+npm install
+npm run dev                  # http://localhost:3000
+```
+
+The API must allow the web origin (`ALLOWED_ORIGINS`, default
+`http://localhost:3000`) for the AI analyst, which the browser calls directly.
+
 ## Tests
 
 - **Python** (`pytest`): the generator is deterministic, keys and relationships
@@ -190,8 +235,12 @@ logs every question, SQL attempt, validation result and duration to
   and that the agent context matches the dbt documentation.
 - **Live** (`pytest -m live`, on demand): one question per story against
   BigQuery and the LLM. Needs `.env` and Google credentials.
-- **CI** (GitHub Actions): pytest and `dbt parse` on every push, without
-  connecting to BigQuery or the LLM.
+- **Web** (`npm test` in `web/`): number and date formatting in both
+  languages, the period filter, the dashboard's data transformations and
+  findings, and that the styleguide shows the real token values.
+- **CI** (GitHub Actions): pytest and `dbt parse`, and for the web lint, type
+  check, tests and a production build, on every push, without connecting to
+  BigQuery or the LLM.
 
 ## Cost
 
@@ -206,7 +255,8 @@ queries are capped with `maximum_bytes_billed`.
 data_generation/   seeded simulation and BigQuery loader (python -m data_generation.build)
 dbt_insightflow/   dbt project: staging → intermediate → marts, tests
 api/               FastAPI: metrics endpoints and the AI analyst (api/agent/)
-docs/              data stories
+web/               Next.js: the dashboard, design system and /styleguide
+docs/              data stories, screenshots
 tests/             pytest: generator, data stories and API
 agent/             legacy Streamlit app (to be replaced)
 ```

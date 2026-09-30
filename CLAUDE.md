@@ -13,7 +13,7 @@ reutilizar en demos para pymes.
 ## Estado de la reforma
 - [x] Fase 1: datos sintéticos estáticos con historia y dbt reorganizado
 - [x] Fase 2: API en FastAPI (métricas y agente)
-- [ ] Fase 3: frontend en Next.js
+- [x] Fase 3: frontend en Next.js
 - [ ] Fase 4: despliegue (API en Cloud Run, frontend en Vercel)
 
 La app anterior en Streamlit (`agent/`) se mantiene funcionando hasta que el nuevo
@@ -37,7 +37,9 @@ frontend la reemplace, y después se elimina.
 - **Sin ejecución programada.** Se elimina la generación diaria (GitHub Actions
   programado y Prefect). Los datos se generan una sola vez con un comando
   determinístico (semilla fija) y se cargan con full refresh.
-- **Idioma:** código, datos, modelos y UI en inglés (portfolio internacional).
+- **Idioma:** código, datos y modelos en inglés. La UI es bilingüe: inglés en `/`
+  (por defecto, portfolio internacional) y español de Argentina en `/es` (demos
+  para pymes).
   Documentación del repo en inglés; los prompts y la conversación pueden ser en
   español.
 - **Almacenamiento:** Google BigQuery (región EU), datasets `raw`, `dbt_staging`,
@@ -81,8 +83,26 @@ frontend la reemplace, y después se elimina.
   las descripciones de dbt, no en el prompt.
 - **LLM:** OpenAI, modelo en `LLM_MODEL` (hoy `gpt-5.4-mini`), encapsulado en
   `api/llm.py`. Variables en `.env` (ver `.env.example`).
-- **Pendiente para la Fase 3:** la pantalla Customers necesita un
-  `GET /customers` con búsqueda, orden y paginación.
+- **Formatos por idioma en el agente:** el prompt de respuesta pide los formatos
+  del idioma de la pregunta, y el control de números lee coma decimal, puntos de
+  miles y "mil"/"M".
+
+## Estado del frontend (Fase 3)
+- **Una sola página** (decisión del usuario, en lugar de cinco secciones): arriba
+  "Ask InsightFlow" (el agente, protagonista, única caja de la página), después
+  la frase principal y los KPI, y seis secciones: tendencia de MRR, cascada del
+  último mes, MRR por plan, bajas de Starter contra otros planes, retorno por
+  canal (LTV/CAC) y clientes con uso en caída.
+- **Idiomas:** `src/lib/i18n.ts` tiene todos los textos; `src/lib/format.ts`
+  formatea por idioma (único lugar donde un número se vuelve texto);
+  `src/proxy.ts` marca el idioma para `<html lang>`.
+- **Datos:** las secciones son server components que piden sus datos a la API
+  (`API_URL`); el chat llama a la API desde el navegador (`NEXT_PUBLIC_API_URL`,
+  requiere que el origen esté en `ALLOWED_ORIGINS`). Las páginas son dinámicas
+  para que un build sin API no deje cacheado el estado de error.
+- **Referencia de diseño:** `/styleguide` (en inglés), enlazada desde el pie.
+- **En Windows local** el puerto 8000 está reservado por el sistema: la API corre
+  en 8765 (`web/.env.local` apunta ahí).
 
 ## Estructura objetivo
 ```
@@ -117,4 +137,5 @@ agent/             app Streamlit anterior (se elimina al final)
 - API: `uvicorn api.main:app --reload`
 - Regenerar el contexto del agente: `python -m api.agent.context`
 - Pruebas de las historias con BigQuery y el LLM (a mano): `pytest -m live`
-- Frontend: `cd web && npm run dev`
+- Frontend: `cd web && npm run dev` (tests: `npm test`; chequeos: `npm run lint`,
+  `npm run typecheck`, `npm run build`)
