@@ -9,13 +9,16 @@
 3. BigQuery runs the query with the byte cap (MartsClient).
 4. A second LLM call sees the real rows and writes the answer, an insight and a
    chart suggestion, using only numbers found in the rows. If it cites any other
-   number it gets one rewrite; after that the rows are returned with a neutral
-   answer instead.
+   number, or slips into another script (a stray Hebrew or Cyrillic word), it
+   gets one rewrite; after that the rows are returned with a neutral answer
+   instead.
 """
 from __future__ import annotations
 
 import json
+import re
 import time
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -123,6 +126,7 @@ class AskResult:
     # For the audit log only.
     attempts: list[dict[str, Any]] = field(default_factory=list)
     unsupported_numbers: list[str] = field(default_factory=list)
+    foreign_words: list[str] = field(default_factory=list)
     duration_ms: int = 0
 
 
@@ -215,19 +219,37 @@ class Analyst:
                 return  # keep the neutral answer; the rows still answer the question
             text = f"{draft.answer} {draft.insight or ''}"
             result.unsupported_numbers = unsupported_numbers(text, result.rows, question)
-            if not result.unsupported_numbers:
+            result.foreign_words = foreign_words(text)
+            if not result.unsupported_numbers and not result.foreign_words:
                 result.answer, result.insight = draft.answer, draft.insight
                 if draft.chart:
                     result.chart = draft.chart
                 return
+            problems = []
+            if result.unsupported_numbers:
+                problems.append(
+                    f"These numbers are not in the rows: {', '.join(result.unsupported_numbers)}. "
+                    "Use only numbers from the rows and describe comparisons in words."
+                )
+            if result.foreign_words:
+                problems.append(
+                    f"These words are not in the language of the question: {', '.join(result.foreign_words)}. "
+                    "Write the whole answer in the language of the question."
+                )
             messages += [
                 {"role": "assistant", "content": draft.model_dump_json()},
-                {"role": "user", "content": (
-                    f"These numbers are not in the rows: {', '.join(result.unsupported_numbers)}. "
-                    "Rewrite the answer using only numbers from the rows and describe comparisons "
-                    "in words. Reply with the same JSON format."
-                )},
+                {"role": "user", "content": " ".join(problems) + " Rewrite the answer. Reply with the same JSON format."},
             ]
+
+
+def foreign_words(text: str) -> list[str]:
+    """Words written in a non-Latin script, such as a stray Hebrew or Cyrillic word.
+
+    Questions come in English or Spanish, so any letter outside the Latin script
+    means the model slipped into another language mid-sentence.
+    """
+    words = re.findall(r"[^\W\d_]+", text)
+    return [word for word in words if any(not unicodedata.name(char, "").startswith("LATIN") for char in word)]
 
 
 def checked_chart(chart: Chart | None, columns: list[str], rows: list[dict[str, Any]]) -> Chart:

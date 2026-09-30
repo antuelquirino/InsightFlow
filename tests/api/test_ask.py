@@ -152,6 +152,24 @@ def test_persistent_invented_numbers_fall_back_to_a_neutral_answer(ask_settings)
     assert read_log(ask_settings)[0]["unsupported_numbers"] == ["5.2"]
 
 
+def test_words_in_another_script_trigger_one_rewrite(ask_settings):
+    slipped = {**GOOD_ANSWER, "answer": "El churn de Starter subió a 9,2%, בעיקר por bajas."}
+    fixed = {**GOOD_ANSWER, "answer": "El churn de Starter subió a 9,2%, sobre todo por bajas."}
+    llm = FakeLLM(GOOD_SQL, slipped, fixed)
+    body = make_client(ask_settings, llm).post("/ask", json={"question": "¿Qué pasó con el churn de Starter?"}).json()
+    assert body["answer"] == fixed["answer"]
+    assert "בעיקר" in llm.calls[2][-1]["content"]
+
+
+def test_persistent_foreign_words_fall_back_to_a_neutral_answer(ask_settings):
+    slipped = {**GOOD_ANSWER, "answer": "Churn rose to 9.2% всего."}
+    llm = FakeLLM(GOOD_SQL, slipped, slipped)
+    body = make_client(ask_settings, llm).post("/ask", json={"question": QUESTION}).json()
+    assert body["status"] == "answered" and body["rows"]
+    assert "9.2%" not in body["answer"]
+    assert read_log(ask_settings)[0]["foreign_words"] == ["всего"]
+
+
 def test_chart_that_does_not_fit_the_rows_is_replaced(ask_settings):
     bad_chart = {**GOOD_ANSWER, "chart": {"type": "bar", "x": "plan", "y": ["mrr"]}}
     llm = FakeLLM(GOOD_SQL, bad_chart)

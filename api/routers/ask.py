@@ -42,6 +42,7 @@ def ask(body: AskRequest, request: Request) -> AskResponse:
         "validation_passed": any(attempt["valid"] for attempt in result.attempts),
         "row_count": len(result.rows),
         "unsupported_numbers": result.unsupported_numbers,
+        "foreign_words": result.foreign_words,
         "duration_ms": result.duration_ms,
     })
     return AskResponse(
