@@ -13,7 +13,9 @@ function getSubtree(
   if (!asChild)
     return typeof content === "function" ? content(children) : content
 
-  const firstChild = React.Children.only(children) as React.ReactElement
+  const firstChild = React.Children.only(children) as React.ReactElement<{
+    children?: React.ReactNode
+  }>
   return React.cloneElement(firstChild, {
     children:
       typeof content === "function"
@@ -33,7 +35,7 @@ const TabNavigation = React.forwardRef<
     <NavigationMenuPrimitives.List
       className={cx(
         // base
-        "flex items-center justify-start whitespace-nowrap border-b [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex scrollbar-none items-center justify-start border-b whitespace-nowrap [&::-webkit-scrollbar]:hidden",
         // border color
         "border-gray-200 dark:border-gray-800",
         className,
@@ -57,7 +59,7 @@ const TabNavigationLink = React.forwardRef<
     <NavigationMenuPrimitives.Link
       aria-disabled={disabled}
       className={cx(
-        "group relative flex shrink-0 select-none items-center justify-center",
+        "group relative flex shrink-0 items-center justify-center select-none",
         disabled ? "pointer-events-none" : "",
       )}
       ref={forwardedRef}
@@ -69,16 +71,16 @@ const TabNavigationLink = React.forwardRef<
         <span
           className={cx(
             // base
-            "-mb-px flex items-center justify-center whitespace-nowrap border-b-2 border-transparent px-3 pb-2 text-sm font-medium transition-all",
+            "-mb-px flex items-center justify-center border-b-2 border-transparent px-3 pb-2 text-sm font-medium whitespace-nowrap transition-all",
             // text color
             "text-gray-500 dark:text-gray-500",
             // hover
-            "group-hover:text-gray-700 group-hover:dark:text-gray-400",
+            "group-hover:text-gray-700 dark:group-hover:text-gray-400",
             // border hover
-            "group-hover:border-gray-300 group-hover:dark:border-gray-400",
+            "group-hover:border-gray-300 dark:group-hover:border-gray-400",
             // selected
-            "group-data-[active]:border-indigo-600 group-data-[active]:text-indigo-600",
-            "group-data-[active]:dark:border-indigo-500 group-data-[active]:dark:text-indigo-500",
+            "group-data-active:border-indigo-600 group-data-active:text-indigo-600",
+            "dark:group-data-active:border-indigo-500 dark:group-data-active:text-indigo-500",
             // disabled
             disabled
               ? "pointer-events-none text-gray-300 dark:text-gray-700"

@@ -1,17 +1,18 @@
 import { RiArrowDownSLine, RiArrowUpSLine } from "@remixicon/react"
-import { Column } from "@tanstack/react-table"
+import { Column, RowData } from "@tanstack/react-table"
 
 import { cx } from "@/lib/utils"
+import { DataTableFeatures } from "./features"
 
 interface DataTableColumnHeaderProps<
-  TData,
+  TData extends RowData,
   TValue,
 > extends React.HTMLAttributes<HTMLDivElement> {
-  column: Column<TData, TValue>
+  column: Column<DataTableFeatures, TData, TValue>
   title: string
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   title,
   className,
@@ -25,7 +26,7 @@ export function DataTableColumnHeader<TData, TValue>({
       onClick={column.getToggleSortingHandler()}
       className={cx(
         column.columnDef.enableSorting === true
-          ? "-mx-2 inline-flex cursor-pointer select-none items-center gap-2 rounded-md px-2 py-1 hover:bg-gray-50 hover:dark:bg-gray-900"
+          ? "-mx-2 inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 select-none hover:bg-gray-50 dark:hover:bg-gray-900"
           : "",
       )}
     >

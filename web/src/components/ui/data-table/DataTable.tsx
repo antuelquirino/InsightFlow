@@ -12,28 +12,22 @@ import { cx } from "@/lib/utils"
 
 import { DataTablePagination } from "./DataTablePagination"
 
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table"
+import { ColumnDef, flexRender, RowData, useTable } from "@tanstack/react-table"
+import { dataTableFeatures, DataTableFeatures } from "./features"
 
-interface DataTableProps<TData> {
-  columns: ColumnDef<TData>[]
+interface DataTableProps<TData extends RowData> {
+  columns: ColumnDef<DataTableFeatures, TData>[]
   data: TData[]
   pageSize?: number
 }
 
-export function DataTable<TData>({
+export function DataTable<TData extends RowData>({
   columns,
   data,
   pageSize = 20,
 }: DataTableProps<TData>) {
-  const table = useReactTable({
+  const table = useTable({
+    features: dataTableFeatures,
     data,
     columns,
     initialState: {
@@ -42,10 +36,6 @@ export function DataTable<TData>({
         pageSize: pageSize,
       },
     },
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
   })
 
   return (
@@ -62,7 +52,7 @@ export function DataTable<TData>({
                   <TableHeaderCell
                     key={header.id}
                     className={cx(
-                      "whitespace-nowrap py-1 text-sm sm:text-xs",
+                      "py-1 text-sm whitespace-nowrap sm:text-xs",
                       header.column.columnDef.meta?.className,
                     )}
                   >
@@ -80,13 +70,13 @@ export function DataTable<TData>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-gray-50 hover:dark:bg-gray-900"
+                  className="hover:bg-gray-50 dark:hover:bg-gray-900"
                 >
-                  {row.getVisibleCells().map((cell) => (
+                  {row.getAllCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       className={cx(
-                        "whitespace-nowrap py-1 text-gray-600 dark:text-gray-400",
+                        "py-1 whitespace-nowrap text-gray-600 dark:text-gray-400",
                         cell.column.columnDef.meta?.className,
                       )}
                     >

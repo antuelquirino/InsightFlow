@@ -101,11 +101,14 @@ export const getYAxisDomain = (
 
 // Tremor Raw hasOnlyOneValueForKey [v0.1.0]
 
+// One row of chart data: the x-axis value plus one value per series.
+export type ChartDatum = Record<string, string | number | null | undefined>
+
 export function hasOnlyOneValueForKey(
-  array: any[],
+  array: ChartDatum[],
   keyToCheck: string,
 ): boolean {
-  const val: any[] = []
+  const val: ChartDatum[string][] = []
 
   for (const obj of array) {
     if (Object.prototype.hasOwnProperty.call(obj, keyToCheck)) {

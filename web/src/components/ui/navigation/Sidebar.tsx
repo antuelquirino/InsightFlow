@@ -31,8 +31,8 @@ export function Sidebar() {
                     className={cx(
                       isActive(pathname, item.href)
                         ? "text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-700 hover:text-gray-900 dark:text-gray-400 hover:dark:text-gray-50",
-                      "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition hover:bg-gray-100 hover:dark:bg-gray-900",
+                        : "text-gray-700 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50",
+                      "flex items-center gap-x-2.5 rounded-md px-2 py-1.5 text-sm font-medium transition hover:bg-gray-100 dark:hover:bg-gray-900",
                       focusRing,
                     )}
                   >
@@ -46,7 +46,7 @@ export function Sidebar() {
         </aside>
       </nav>
       {/* top navbar (xs-lg) */}
-      <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 shadow-sm sm:gap-x-6 sm:px-4 lg:hidden dark:border-gray-800 dark:bg-gray-950">
+      <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center justify-between border-b border-gray-200 bg-white px-2 shadow-xs sm:gap-x-6 sm:px-4 lg:hidden dark:border-gray-800 dark:bg-gray-950">
         <Link
           href={siteConfig.baseLinks.home}
           className={cx("px-2 py-1 text-lg font-semibold", focusRing)}

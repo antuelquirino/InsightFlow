@@ -6,14 +6,15 @@ import {
   RiArrowRightDoubleLine,
   RiArrowRightSLine,
 } from "@remixicon/react"
-import { Table } from "@tanstack/react-table"
+import { RowData, Table } from "@tanstack/react-table"
+import { DataTableFeatures } from "./features"
 
-interface DataTablePaginationProps<TData> {
-  table: Table<TData>
+interface DataTablePaginationProps<TData extends RowData> {
+  table: Table<DataTableFeatures, TData>
   pageSize: number
 }
 
-export function DataTablePagination<TData>({
+export function DataTablePagination<TData extends RowData>({
   table,
   pageSize,
 }: DataTablePaginationProps<TData>) {
@@ -49,18 +50,14 @@ export function DataTablePagination<TData>({
   ]
 
   const totalRows = table.getFilteredRowModel().rows.length
-  const currentPage = table.getState().pagination.pageIndex
+  const currentPage = table.store.state.pagination.pageIndex
   const firstRowIndex = currentPage * pageSize + 1
   const lastRowIndex = Math.min(totalRows, firstRowIndex + pageSize - 1)
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="text-sm tabular-nums text-gray-500">
-        {table.getFilteredSelectedRowModel().rows.length} of {totalRows} row(s)
-        selected.
-      </div>
+    <div className="flex items-center justify-end">
       <div className="flex items-center gap-x-6 lg:gap-x-8">
-        <p className="hidden text-sm tabular-nums text-gray-500 sm:block">
+        <p className="hidden text-sm text-gray-500 tabular-nums sm:block">
           Showing{" "}
           <span className="font-medium text-gray-900 dark:text-gray-50">
             {firstRowIndex}-{lastRowIndex}
@@ -76,10 +73,7 @@ export function DataTablePagination<TData>({
               key={index}
               variant="secondary"
               className={cx(button.mobileView, "p-1.5")}
-              onClick={() => {
-                button.onClick()
-                table.resetRowSelection()
-              }}
+              onClick={button.onClick}
               disabled={button.disabled}
             >
               <span className="sr-only">{button.srText}</span>
