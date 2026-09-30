@@ -52,7 +52,7 @@ export function AskPanel({ locale = "en" }: { locale?: Locale }) {
       const response = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed }),
+        body: JSON.stringify({ question: trimmed, language: locale }),
       })
       if (!response.ok) {
         throw new Error(

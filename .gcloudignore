@@ -1,0 +1,8 @@
+# What `gcloud run deploy --source .` uploads to Cloud Build: only what the
+# Dockerfile needs (the same as .dockerignore). Without this file gcloud would
+# walk the whole repo, web/node_modules included.
+/*
+!/Dockerfile
+!/.dockerignore
+!/api/
+api/**/__pycache__/

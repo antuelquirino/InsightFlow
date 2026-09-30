@@ -33,7 +33,7 @@ def ask(body: AskRequest, request: Request) -> AskResponse:
     except RateLimitExceeded as error:
         raise HTTPException(status_code=429, detail=str(error), headers={"Retry-After": str(error.retry_after)})
 
-    result = state.analyst.ask(body.question)
+    result = state.analyst.ask(body.question, body.language)
     log_ask(state.settings.ask_log_path, {
         "question": body.question,
         "status": result.status,
@@ -42,6 +42,7 @@ def ask(body: AskRequest, request: Request) -> AskResponse:
         "validation_passed": any(attempt["valid"] for attempt in result.attempts),
         "row_count": len(result.rows),
         "unsupported_numbers": result.unsupported_numbers,
+        "foreign_words": result.foreign_words,
         "duration_ms": result.duration_ms,
     })
     return AskResponse(

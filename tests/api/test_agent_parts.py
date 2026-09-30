@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from api.agent.numbers import unsupported_numbers
+from api.agent.pipeline import foreign_words
 from api.llm import LLMError, OpenAILLM
 from api.rate_limit import AskRateLimiter, RateLimitExceeded
 
@@ -129,3 +130,12 @@ def test_spanish_formats_are_supported(text):
 
 def test_spanish_invented_numbers_are_flagged():
     assert unsupported_numbers("Subió 5,2 pp.", ROWS) == ["5,2"]
+
+
+def test_foreign_words_ignore_english_and_spanish():
+    assert foreign_words("La retención neta cayó en añadidos; ¿por qué? Churn rose to 9.2% in São Paulo.") == []
+
+
+def test_foreign_words_catch_other_scripts():
+    assert foreign_words("Subió בעיקר por bajas y всего.") == [
+        "בעיקר", "всего"]
