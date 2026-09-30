@@ -31,6 +31,8 @@ SingleMonth = Annotated[
     Query(pattern=MONTH_PATTERN, description="Month, YYYY-MM. Defaults to the latest month.", examples=["2026-08"]),
 ]
 
+NO_DATA = {404: {"description": "No data for the requested month."}}
+
 # KPI -> (how its change is expressed, whether an increase is good news).
 SUMMARY_KPIS = {
     "mrr": ("relative", True),
@@ -52,7 +54,7 @@ MRR_GROUP_COLUMNS = {
 }
 
 
-@router.get("/summary", response_model=SummaryResponse, summary="Headline KPIs of a month")
+@router.get("/summary", response_model=SummaryResponse, summary="Headline KPIs of a month", responses=NO_DATA)
 def summary(marts: Marts, month: SingleMonth = None) -> SummaryResponse:
     """KPIs of the latest month (or `month`) and their change against the previous month,
     from `kpi_summary`. `change_type` says whether `change` is relative (amounts, counts) or
@@ -207,7 +209,7 @@ def retention(
     return RetentionResponse(cohorts=cohorts)
 
 
-@router.get("/unit-economics", response_model=UnitEconomicsResponse, summary="Unit economics per channel")
+@router.get("/unit-economics", response_model=UnitEconomicsResponse, summary="Unit economics per channel", responses=NO_DATA)
 def unit_economics(marts: Marts, month: SingleMonth = None) -> UnitEconomicsResponse:
     """CAC, ARPA, LTV, LTV:CAC and payback per acquisition channel for the latest month (or
     `month`), from `fct_unit_economics`. CAC and churn use trailing 12-month sums."""

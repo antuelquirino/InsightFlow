@@ -12,7 +12,7 @@ reutilizar en demos para pymes.
 
 ## Estado de la reforma
 - [x] Fase 1: datos sintéticos estáticos con historia y dbt reorganizado
-- [ ] Fase 2: API en FastAPI (métricas y agente)
+- [x] Fase 2: API en FastAPI (métricas y agente)
 - [ ] Fase 3: frontend en Next.js
 - [ ] Fase 4: despliegue (API en Cloud Run, frontend en Vercel)
 
@@ -25,7 +25,7 @@ frontend la reemplace, y después se elimina.
   último mes completo y los números de `docs/data-stories.md` cambian.
 - **Marts nuevos** (los únicos que usan la API y el agente): `kpi_summary`,
   `fct_mrr_monthly`, `fct_mrr_movements`, `fct_churn`, `fct_retention_cohorts`,
-  `fct_unit_economics`, `dim_organizations`. Sus descripciones están en
+  `fct_unit_economics`, `dim_organizations`, `dim_plans`. Sus descripciones están en
   `dbt_insightflow/models/marts/schema.yml` y son el contexto del agente.
 - **Tablas heredadas en `dbt_marts`** (`fact_*`, `kpi_active_companies`,
   `kpi_churn_rate`, `kpi_mrr_growth`): congeladas, solo para la app Streamlit.
@@ -53,6 +53,20 @@ frontend la reemplace, y después se elimina.
   con Recharts.
 - **LLM:** se mantiene el proveedor actual, encapsulado en un único módulo para
   poder cambiarlo sin tocar el resto.
+
+## Estado de la API (Fase 2)
+- **Endpoints:** `/health`, `/metrics/*` (summary, mrr, mrr-movements, churn,
+  retention, unit-economics), `/customers/at-risk` y `POST /ask`. Documentación
+  en `/docs`.
+- **Contexto del agente:** `api/agent/marts_context.md` y `marts_schema.json`
+  se generan con `python -m api.agent.context`. Hay que regenerarlos cada vez
+  que cambian los marts o su `schema.yml`; un test falla si quedan desfasados.
+  Las pistas para el agente (cómo comparar churn, cómo explicar el NRR) van en
+  las descripciones de dbt, no en el prompt.
+- **LLM:** OpenAI, modelo en `LLM_MODEL` (hoy `gpt-5.4-mini`), encapsulado en
+  `api/llm.py`. Variables en `.env` (ver `.env.example`).
+- **Pendiente para la Fase 3:** la pantalla Customers necesita un
+  `GET /customers` con búsqueda, orden y paginación.
 
 ## Estructura objetivo
 ```
@@ -85,4 +99,6 @@ agent/             app Streamlit anterior (se elimina al final)
 - Chequeo de dbt sin BigQuery (lo que corre el CI):
   `cd dbt_insightflow && dbt parse --profiles-dir .`
 - API: `uvicorn api.main:app --reload`
+- Regenerar el contexto del agente: `python -m api.agent.context`
+- Pruebas de las historias con BigQuery y el LLM (a mano): `pytest -m live`
 - Frontend: `cd web && npm run dev`

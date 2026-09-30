@@ -51,9 +51,10 @@ def create_app(
         """Returns `ok` when the API is up. Does not query BigQuery."""
         return {"status": "ok"}
 
-    app.include_router(metrics.router)
-    app.include_router(customers.router)
-    app.include_router(ask.router)
+    warehouse_error = {502: {"description": "BigQuery could not answer the request."}}
+    app.include_router(metrics.router, responses=warehouse_error)
+    app.include_router(customers.router, responses=warehouse_error)
+    app.include_router(ask.router, responses=warehouse_error)
     return app
 
 

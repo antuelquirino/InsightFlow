@@ -2,8 +2,8 @@
 
 An analytics platform for a fictional B2B SaaS company: realistic synthetic
 data in BigQuery, modeled with dbt into business metrics (MRR, churn,
-retention, unit economics), to be served by an API to a web dashboard and an
-AI agent that answers business questions in plain English.
+retention, unit economics), served by an API to a web dashboard and an AI
+agent that answers business questions in plain English.
 
 The data is not random noise. It is generated to hide five business stories
 (a price increase that backfires, a channel that brings customers who leave
@@ -16,7 +16,7 @@ real to find.
 The project is being rebuilt in four phases:
 
 - [x] **Phase 1 — Data:** deterministic synthetic history and layered dbt models
-- [ ] **Phase 2 — API:** FastAPI service for metrics and the agent
+- [x] **Phase 2 — API:** FastAPI service for metrics and the agent
 - [ ] **Phase 3 — Web:** Next.js dashboard and chat
 - [ ] **Phase 4 — Deploy:** API on Cloud Run, web on Vercel
 
@@ -32,8 +32,9 @@ flowchart LR
     raw --> stg[(dbt_staging<br/>typed views)]
     stg --> int[(dbt_intermediate<br/>one calculation per model)]
     int --> marts[(dbt_marts<br/>documented metrics)]
-    marts -.->|Phase 2| api["FastAPI"]
-    api -.->|Phase 3| web["Next.js dashboard + agent"]
+    marts --> api["FastAPI<br/>metrics + AI analyst"]
+    llm["LLM"] <--> api
+    api -.->|Phase 3| web["Next.js dashboard + chat"]
 ```
 
 - **Generation:** a month-by-month simulation of a customer base: 14-day trials,
@@ -43,8 +44,10 @@ flowchart LR
 - **Storage:** Google BigQuery (EU). Data is generated once and loaded by hand;
   nothing runs on a schedule.
 - **Transformation:** dbt Core with dbt-bigquery, in three layers. Every mart
-  model and column is documented; those descriptions will be the agent's
-  context.
+  model and column is documented; those descriptions are the agent's context.
+- **API:** FastAPI, the only way to reach BigQuery. Fixed, parameterized
+  queries for the dashboard metrics, and an AI analyst that writes SQL,
+  which is validated before it runs.
 
 ## The data
 
@@ -89,6 +92,7 @@ Each story, its figures and how it is tested: [docs/data-stories.md](docs/data-s
 | `fct_retention_cohorts` | cohort × months since first payment | Logo and revenue retention matrix |
 | `fct_unit_economics` | month × channel | CAC, ARPA, LTV, LTV:CAC, payback |
 | `dim_organizations` | company | Current status, MRR, usage trend and churn risk |
+| `dim_plans` | plan price version | Price history, including when prices changed |
 
 ## Getting started
 
@@ -127,6 +131,51 @@ dbt build --profiles-dir .
 The project ID and region are set in `data_generation/config.py` and
 `dbt_insightflow/profiles.yml`.
 
+## API
+
+```bash
+cp .env.example .env        # add OPENAI_API_KEY and LLM_MODEL for /ask
+uvicorn api.main:app --reload
+```
+
+Interactive docs at http://localhost:8000/docs. Money is USD and rates are
+fractions (0.05 = 5%); formatting is left to the client.
+
+| Endpoint | Returns |
+|---|---|
+| `GET /health` | Liveness (no query) |
+| `GET /metrics/summary` | Headline KPIs of a month with their change against the previous month |
+| `GET /metrics/mrr` | MRR series, total or by plan, channel or company size |
+| `GET /metrics/mrr-movements` | Monthly MRR bridge |
+| `GET /metrics/churn` | Logo and revenue churn, total or by plan or channel |
+| `GET /metrics/retention` | Cohort retention matrix |
+| `GET /metrics/unit-economics` | CAC, LTV, LTV:CAC and payback per channel |
+| `GET /customers/at-risk` | Paying customers with fading usage, largest MRR first |
+| `POST /ask` | The AI analyst: answer, insight, SQL, rows and a chart suggestion |
+
+Metric filters (`start_month`, `end_month` as `YYYY-MM`, `plan`, `channel`,
+`breakdown`) are validated and bound as query parameters. Results are cached in
+memory, since the data is static.
+
+### How `/ask` works
+
+1. The model receives the marts context, generated from the dbt documentation
+   by `python -m api.agent.context` (types and coverage come from BigQuery),
+   and writes one BigQuery query, or declines if the data cannot answer.
+2. The query is validated with sqlglot: a single read-only SELECT over the
+   eight marts only (no other datasets, legacy tables, `INFORMATION_SCHEMA`
+   or table functions), with its LIMIT capped at 500.
+3. It runs with a cap on bytes billed. A rejected query, a BigQuery error or an
+   empty result goes back to the model once.
+4. A second call reads the real rows and writes the answer, an insight and a
+   chart suggestion. Every number in the answer is checked against the rows;
+   an answer that cites anything else is rewritten once, then replaced by a
+   neutral answer next to the data.
+
+`/ask` allows 5 questions per minute per client and 200 per day in total, and
+logs every question, SQL attempt, validation result and duration to
+`logs/ask.jsonl`. The LLM provider is confined to `api/llm.py`.
+
 ## Tests
 
 - **Python** (`pytest`): the generator is deterministic, keys and relationships
@@ -135,8 +184,14 @@ The project ID and region are set in `data_generation/config.py` and
 - **dbt** (`dbt build`): keys, accepted values and relationships, plus business
   rules: the MRR bridge closes every month, all marts agree on MRR and
   customer counts, subscription periods never overlap, and rates stay in range.
+- **API** (`pytest`): every endpoint against a fake BigQuery client, filter
+  validation, the SQL validator's rejected and accepted queries, the `/ask`
+  flow with a scripted LLM (retries, number check, charts, rate limits, log),
+  and that the agent context matches the dbt documentation.
+- **Live** (`pytest -m live`, on demand): one question per story against
+  BigQuery and the LLM. Needs `.env` and Google credentials.
 - **CI** (GitHub Actions): pytest and `dbt parse` on every push, without
-  connecting to BigQuery.
+  connecting to BigQuery or the LLM.
 
 ## Cost
 
@@ -150,8 +205,9 @@ queries are capped with `maximum_bytes_billed`.
 ```text
 data_generation/   seeded simulation and BigQuery loader (python -m data_generation.build)
 dbt_insightflow/   dbt project: staging → intermediate → marts, tests
+api/               FastAPI: metrics endpoints and the AI analyst (api/agent/)
 docs/              data stories
-tests/             pytest: generator invariants and data stories
+tests/             pytest: generator, data stories and API
 agent/             legacy Streamlit app (to be replaced)
 ```
 
