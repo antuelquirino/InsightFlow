@@ -6,52 +6,47 @@ import {
   formatMonth,
   formatNumber,
   formatPercent,
+  previousMonth,
   toneOf,
 } from "./format"
+import { MESSAGES } from "./i18n"
+import type { Locale } from "./locale"
 import type { Kpi, SummaryResponse } from "./types"
 
-function item(
-  label: string,
-  kpi: Kpi,
-  value: string,
-  previousMonth: string,
-): KpiItem {
-  const change = kpi.change
-  return {
+/** The five headline KPIs of a month, as the dashboard shows them. */
+export function headlineKpis(
+  summary: SummaryResponse,
+  locale: Locale = "en",
+): KpiItem[] {
+  const t = MESSAGES[locale].kpis
+  const comparison = t.versus(
+    formatMonth(previousMonth(summary.month), "month", { locale }),
+  )
+  const item = (label: string, kpi: Kpi, value: string): KpiItem => ({
     label,
     value,
-    change: formatChange(change, kpi.change_type),
-    direction: !change ? "flat" : change > 0 ? "up" : "down",
-    tone: toneOf(change, kpi.higher_is_better),
-    comparison: `vs ${previousMonth}`,
-  }
-}
-
-/** The five headline KPIs of a month, as the Overview shows them. */
-export function headlineKpis(summary: SummaryResponse): KpiItem[] {
-  const [year, month] = summary.month.split("-").map(Number)
-  const previous = new Date(Date.UTC(year, month - 2, 1)).toISOString()
-  const previousMonth = formatMonth(previous, "month")
+    change: formatChange(kpi.change, kpi.change_type, { locale }),
+    direction: !kpi.change ? "flat" : kpi.change > 0 ? "up" : "down",
+    tone: toneOf(kpi.change, kpi.higher_is_better),
+    comparison,
+  })
   return [
-    item("MRR", summary.mrr, formatCurrency(summary.mrr.value), previousMonth),
-    item("ARR", summary.arr, formatCurrency(summary.arr.value), previousMonth),
+    item(t.mrr, summary.mrr, formatCurrency(summary.mrr.value, { locale })),
+    item(t.arr, summary.arr, formatCurrency(summary.arr.value, { locale })),
     item(
-      "Net revenue retention",
+      t.nrr,
       summary.nrr,
-      formatPercent(summary.nrr.value, { decimals: 0 }),
-      previousMonth,
+      formatPercent(summary.nrr.value, { decimals: 0, locale }),
     ),
     item(
-      "Logo churn",
+      t.logoChurn,
       summary.logo_churn_rate,
-      formatPercent(summary.logo_churn_rate.value),
-      previousMonth,
+      formatPercent(summary.logo_churn_rate.value, { locale }),
     ),
     item(
-      "Paying customers",
+      t.customers,
       summary.paying_customers,
-      formatNumber(summary.paying_customers.value),
-      previousMonth,
+      formatNumber(summary.paying_customers.value, { locale }),
     ),
   ]
 }

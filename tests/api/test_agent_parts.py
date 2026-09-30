@@ -115,3 +115,17 @@ def test_daily_limit_resets_the_next_day():
         limiter.check("b")
     day[0] = date(2026, 9, 2)
     limiter.check("b")
+
+
+@pytest.mark.parametrize("text", [
+    "La tasa de Starter fue 9,2% y el MRR llegó a US$297 mil.",
+    "El MRR exacto fue US$297.287; CAC de US$2,3 mil.",
+    "LTV / CAC de 2,5x contra 15,7x.",
+])
+def test_spanish_formats_are_supported(text):
+    rows = ROWS + [{"cac": 2339.0}]
+    assert unsupported_numbers(text, rows) == []
+
+
+def test_spanish_invented_numbers_are_flagged():
+    assert unsupported_numbers("Subió 5,2 pp.", ROWS) == ["5,2"]

@@ -30,76 +30,98 @@ import {
 } from "@/lib/dashboardData"
 import { PLAN_COLORS, PLAN_LABELS, PLANS } from "@/lib/entities"
 import { formatCurrency, formatMonth, formatPercent } from "@/lib/format"
+import { MESSAGES } from "@/lib/i18n"
+import type { Locale } from "@/lib/locale"
 
-const periodLabel = (range: Required<MonthRange>) =>
-  `${formatMonth(`${range.start_month}-01`)} to ${formatMonth(`${range.end_month}-01`)}`
+type Range = Required<MonthRange>
+
+interface SectionProps {
+  locale: Locale
+}
+
+const periodLabel = (range: Range, locale: Locale) =>
+  MESSAGES[locale].periodRange(
+    formatMonth(`${range.start_month}-01`, "short", { locale }),
+    formatMonth(`${range.end_month}-01`, "short", { locale }),
+  )
 
 export async function MrrTrendSection({
   range,
-}: {
-  range: Required<MonthRange>
-}) {
+  locale,
+}: SectionProps & { range: Range }) {
+  const t = MESSAGES[locale].mrrTrend
   const result = await loadOrNull(() => api.mrr(range))
-  if (!result) return <ChartError />
-  if (!result.series.length) return <ChartEmpty />
+  if (!result) return <ChartError locale={locale} />
+  if (!result.series.length) return <ChartEmpty locale={locale} />
   return (
     <ChartSection
-      finding={mrrTrendFinding(result.series)}
-      metric={`Monthly recurring revenue at month end · ${periodLabel(range)}`}
+      finding={mrrTrendFinding(result.series, locale)}
+      metric={t.metric(periodLabel(range, locale))}
     >
       <MetricLineChart
         data={result.series.map((point) => ({
           month: point.month,
-          MRR: point.mrr,
+          [t.series]: point.mrr,
         }))}
-        categories={["MRR"]}
+        categories={[t.series]}
         colors={["ochre"]}
         valueFormat="currency"
+        locale={locale}
       />
     </ChartSection>
   )
 }
 
-export async function BridgeSection({ month }: { month: string }) {
+export async function BridgeSection({
+  month,
+  locale,
+}: SectionProps & { month: string }) {
   const yyyyMm = month.slice(0, 7)
   const result = await loadOrNull(() =>
     api.mrrMovements({ start_month: yyyyMm, end_month: yyyyMm }),
   )
-  if (!result) return <ChartError />
+  if (!result) return <ChartError locale={locale} />
   const movements = result.months[0]
-  if (!movements) return <ChartEmpty />
+  if (!movements) return <ChartEmpty locale={locale} />
   const floor = bridgeAxisFloor(movements)
   return (
     <ChartSection
-      finding={bridgeFinding(movements)}
-      metric={`How MRR moved in ${formatMonth(month, "long")} · axis starts at ${formatCurrency(floor)}`}
+      finding={bridgeFinding(movements, locale)}
+      metric={MESSAGES[locale].bridge.metric(
+        formatMonth(month, "long", { locale }),
+        formatCurrency(floor, { locale }),
+      )}
     >
-      <Waterfall steps={bridgeSteps(movements)} axisFloor={floor} />
+      <Waterfall
+        steps={bridgeSteps(movements, locale)}
+        axisFloor={floor}
+        locale={locale}
+      />
     </ChartSection>
   )
 }
 
 export async function MrrByPlanSection({
   range,
-}: {
-  range: Required<MonthRange>
-}) {
+  locale,
+}: SectionProps & { range: Range }) {
   const result = await loadOrNull(() =>
     api.mrr({ ...range, breakdown: "plan" }),
   )
-  if (!result) return <ChartError />
-  if (!result.series.length) return <ChartEmpty />
+  if (!result) return <ChartError locale={locale} />
+  if (!result.series.length) return <ChartEmpty locale={locale} />
   const rows = mrrByPlanRows(result.series)
   return (
     <ChartSection
-      finding={largestPlanFinding(rows)}
-      metric={`MRR by plan · ${periodLabel(range)}`}
+      finding={largestPlanFinding(rows, locale)}
+      metric={MESSAGES[locale].byPlan.metric(periodLabel(range, locale))}
     >
       <MetricLineChart
         data={rows}
         categories={PLANS.map((plan) => PLAN_LABELS[plan])}
         colors={PLANS.map((plan) => PLAN_COLORS[plan])}
         valueFormat="currency"
+        locale={locale}
       />
     </ChartSection>
   )
@@ -107,60 +129,61 @@ export async function MrrByPlanSection({
 
 export async function ChurnByPlanSection({
   range,
-}: {
-  range: Required<MonthRange>
-}) {
+  locale,
+}: SectionProps & { range: Range }) {
+  const t = MESSAGES[locale].churn
   const result = await loadOrNull(() =>
     api.churn({ ...range, breakdown: "plan" }),
   )
-  if (!result) return <ChartError />
-  if (!result.series.length) return <ChartEmpty />
-  const rows = starterVsOthers(result.series)
+  if (!result) return <ChartError locale={locale} />
+  if (!result.series.length) return <ChartEmpty locale={locale} />
+  const rows = starterVsOthers(result.series, locale)
   return (
     <ChartSection
-      finding={starterPeakFinding(rows)}
-      metric={`Share of customers lost each month · ${periodLabel(range)}`}
+      finding={starterPeakFinding(rows, locale)}
+      metric={t.metric(periodLabel(range, locale))}
     >
       <MetricLineChart
         data={rows}
-        categories={["Starter", "Other plans"]}
+        categories={["Starter", t.otherPlans]}
         colors={["ochre", "muted"]}
         valueFormat="percent"
+        locale={locale}
       />
     </ChartSection>
   )
 }
 
-export async function ChannelsSection() {
+export async function ChannelsSection({ locale }: SectionProps) {
   const result = await loadOrNull(() => api.unitEconomics())
-  if (!result) return <ChartError />
-  const { rows, weakest, finding } = channelReturns(result.channels)
-  if (!rows.length) return <ChartEmpty />
+  if (!result) return <ChartError locale={locale} />
+  const { rows, series, weakest, finding } = channelReturns(
+    result.channels,
+    locale,
+  )
+  if (!rows.length) return <ChartEmpty locale={locale} />
   // Emphasis: the weakest channel in the accent, the others as context.
-  const colors: AvailableChartColorsKeys[] = rows.map((row) =>
-    weakest && row.channel === rows[rows.length - 1].channel
-      ? "ochre"
-      : "muted",
+  const colors: AvailableChartColorsKeys[] = rows.map((_, index) =>
+    weakest && index === rows.length - 1 ? "ochre" : "muted",
   )
   return (
-    <ChartSection
-      finding={finding}
-      metric="Lifetime value of a customer divided by its acquisition cost · last 12 months"
-    >
+    <ChartSection finding={finding} metric={MESSAGES[locale].channels.metric}>
       <BarChart
         data={rows}
         index="channel"
-        category="LTV to CAC"
+        category={series}
         valueFormat="ratio"
         colors={colors}
+        locale={locale}
       />
     </ChartSection>
   )
 }
 
-export async function AtRiskSection() {
+export async function AtRiskSection({ locale }: SectionProps) {
+  const t = MESSAGES[locale].atRisk
   const result = await loadOrNull(() => api.atRisk({ limit: 200 }))
-  if (!result) return <ChartError />
+  if (!result) return <ChartError locale={locale} />
   const customers = result.customers
   const high = customers.filter(
     (customer) => customer.churn_risk === "high",
@@ -173,20 +196,21 @@ export async function AtRiskSection() {
     )
     .slice(0, 8)
   return (
-    <ChartSection
-      finding={`${customers.length} paying customers are using the product less, ${high} of them sharply`}
-      metric="Sharpest declines first, then the largest accounts · usage is active users in the last 4 weeks against the 8 before"
-    >
+    <ChartSection finding={t.finding(customers.length, high)} metric={t.metric}>
       {shown.length ? (
         <div className="overflow-x-auto">
           <Table>
             <TableHead>
               <TableRow>
-                <TableHeaderCell>Customer</TableHeaderCell>
-                <TableHeaderCell>Plan</TableHeaderCell>
-                <TableHeaderCell className="text-right">MRR</TableHeaderCell>
-                <TableHeaderCell className="text-right">Usage</TableHeaderCell>
-                <TableHeaderCell>Risk</TableHeaderCell>
+                <TableHeaderCell>{t.customer}</TableHeaderCell>
+                <TableHeaderCell>{t.plan}</TableHeaderCell>
+                <TableHeaderCell className="text-right">
+                  {t.mrr}
+                </TableHeaderCell>
+                <TableHeaderCell className="text-right">
+                  {t.usage}
+                </TableHeaderCell>
+                <TableHeaderCell>{t.risk}</TableHeaderCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -197,12 +221,13 @@ export async function AtRiskSection() {
                   </TableCell>
                   <TableCell>{PLAN_LABELS[customer.current_plan_id]}</TableCell>
                   <TableCell className="text-right tabular-nums">
-                    {formatCurrency(customer.current_mrr)}
+                    {formatCurrency(customer.current_mrr, { locale })}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {formatPercent(customer.usage_trend - 1, {
                       decimals: 0,
                       signed: true,
+                      locale,
                     })}
                   </TableCell>
                   <TableCell>
@@ -211,7 +236,7 @@ export async function AtRiskSection() {
                         customer.churn_risk === "high" ? "loss" : "neutral"
                       }
                     >
-                      {customer.churn_risk === "high" ? "High" : "Medium"}
+                      {customer.churn_risk === "high" ? t.high : t.medium}
                     </Badge>
                   </TableCell>
                 </TableRow>
@@ -220,10 +245,7 @@ export async function AtRiskSection() {
           </Table>
         </div>
       ) : (
-        <ChartEmpty
-          message="No customers at risk right now."
-          hint="Usage is steady everywhere."
-        />
+        <ChartEmpty locale={locale} message={t.empty} hint={t.emptyHint} />
       )}
     </ChartSection>
   )

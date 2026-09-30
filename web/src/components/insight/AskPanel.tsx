@@ -2,7 +2,7 @@
 
 // The AI analyst, on the dashboard itself. The browser calls POST /ask on the
 // API directly (CORS allows this site); the API validates the SQL, runs it and
-// writes the answer from the real rows.
+// writes the answer from the real rows, in the language of the question.
 
 import { RiArrowRightLine, RiSparkling2Line } from "@remixicon/react"
 import { useState } from "react"
@@ -17,26 +17,20 @@ import {
   TableRow,
 } from "@/components/Table"
 import type { ChartDatum } from "@/lib/chartUtils"
+import { MESSAGES, type Messages } from "@/lib/i18n"
+import type { Locale } from "@/lib/locale"
 import type { AskResponse } from "@/lib/types"
 import { cx, focusInput, focusRing } from "@/lib/utils"
 import { BarChart } from "./BarChart"
 import { MetricLineChart } from "./MetricChart"
 import {
   formatLabel,
+  formatterFor,
   guessFormat,
   isIsoDate,
-  VALUE_FORMATTERS,
 } from "./valueFormats"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-
-// Each one leads to a story hidden in the data (docs/data-stories.md).
-export const SUGGESTED_QUESTIONS = [
-  "What happened to Starter churn after the price change?",
-  "Which acquisition channel has the highest churn rate?",
-  "Why is net revenue retention above 100% if we are losing customers?",
-  "Which paying customers are at high risk of churning?",
-]
 
 type State =
   | { kind: "idle" }
@@ -44,7 +38,8 @@ type State =
   | { kind: "done"; question: string; result: AskResponse }
   | { kind: "error"; question: string; message: string }
 
-export function AskPanel() {
+export function AskPanel({ locale = "en" }: { locale?: Locale }) {
+  const t = MESSAGES[locale].ask
   const [question, setQuestion] = useState("")
   const [state, setState] = useState<State>({ kind: "idle" })
 
@@ -60,13 +55,12 @@ export function AskPanel() {
         body: JSON.stringify({ question: trimmed }),
       })
       if (!response.ok) {
-        const body = await response.json().catch(() => null)
-        const detail = typeof body?.detail === "string" ? body.detail : null
         throw new Error(
-          detail ??
-            (response.status === 503
-              ? "The AI analyst is not configured on this server."
-              : "The analyst could not answer right now."),
+          response.status === 429
+            ? t.rateLimited
+            : response.status === 503
+              ? t.notConfigured
+              : t.failed,
         )
       }
       setState({
@@ -79,9 +73,7 @@ export function AskPanel() {
         kind: "error",
         question: trimmed,
         message:
-          error instanceof TypeError
-            ? "The InsightFlow API could not be reached."
-            : (error as Error).message,
+          error instanceof TypeError ? t.unreachable : (error as Error).message,
       })
     }
   }
@@ -96,13 +88,13 @@ export function AskPanel() {
         className="flex flex-col gap-2 sm:flex-row"
       >
         <label htmlFor="ask-question" className="sr-only">
-          Your question
+          {t.questionLabel}
         </label>
         <input
           id="ask-question"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Type your question"
+          placeholder={t.placeholder}
           maxLength={500}
           className={cx(
             "w-full rounded-md border border-rule bg-paper px-3.5 py-2.5 text-base text-ink placeholder:text-muted",
@@ -114,12 +106,12 @@ export function AskPanel() {
           className="px-5 text-base"
           disabled={state.kind === "loading" || question.trim().length < 3}
         >
-          {state.kind === "loading" ? "Thinking…" : "Ask"}
+          {state.kind === "loading" ? t.thinking : t.button}
         </Button>
       </form>
 
-      <div className="flex flex-wrap gap-2" aria-label="Suggested questions">
-        {SUGGESTED_QUESTIONS.map((suggestion) => (
+      <div className="flex flex-wrap gap-2" aria-label={t.suggestionsLabel}>
+        {t.suggestions.map((suggestion) => (
           <button
             key={suggestion}
             type="button"
@@ -142,22 +134,34 @@ export function AskPanel() {
       <div aria-live="polite" className="empty:hidden">
         {state.kind === "loading" ? (
           <p className="border-t border-rule pt-5 text-sm text-graphite">
-            Writing a query for “{state.question}”. This takes a few seconds.
+            {t.working(state.question)}
           </p>
         ) : null}
         {state.kind === "error" ? (
           <div role="alert" className="border-t border-rule pt-5">
             <p className="text-sm font-medium text-ink">{state.message}</p>
-            <p className="mt-1 text-sm text-muted">Try again in a moment.</p>
+            <p className="mt-1 text-sm text-muted">{t.tryAgain}</p>
           </div>
         ) : null}
-        {state.kind === "done" ? <Answer result={state.result} /> : null}
+        {state.kind === "done" ? (
+          <Answer result={state.result} locale={locale} t={t} />
+        ) : null}
       </div>
     </div>
   )
 }
 
-function Answer({ result }: { result: AskResponse }) {
+type AskMessages = Messages["ask"]
+
+function Answer({
+  result,
+  locale,
+  t,
+}: {
+  result: AskResponse
+  locale: Locale
+  t: AskMessages
+}) {
   return (
     <article className="space-y-5 border-t border-rule pt-5">
       <div className="flex gap-3">
@@ -174,8 +178,8 @@ function Answer({ result }: { result: AskResponse }) {
       </div>
       {result.status === "answered" && result.rows.length ? (
         <>
-          <AnswerChart result={result} />
-          <ResultTable result={result} />
+          <AnswerChart result={result} locale={locale} />
+          <ResultTable result={result} locale={locale} t={t} />
         </>
       ) : null}
       {result.sql ? (
@@ -186,9 +190,9 @@ function Answer({ result }: { result: AskResponse }) {
               focusRing,
             )}
           >
-            Show the SQL behind this answer
+            {t.showSql}
           </summary>
-          <pre className="mt-2 overflow-x-auto rounded-md border border-rule bg-surface p-3 font-mono text-xs whitespace-pre-wrap text-graphite">
+          <pre className="mt-2 overflow-x-auto rounded-md border border-rule bg-paper p-3 font-mono text-xs whitespace-pre-wrap text-graphite">
             {result.sql}
           </pre>
         </details>
@@ -198,7 +202,13 @@ function Answer({ result }: { result: AskResponse }) {
 }
 
 // The chart the API suggests, drawn with the dashboard's own components.
-function AnswerChart({ result }: { result: AskResponse }) {
+function AnswerChart({
+  result,
+  locale,
+}: {
+  result: AskResponse
+  locale: Locale
+}) {
   const { chart, rows } = result
   const y = chart.y[0]
   if (!y) return null
@@ -207,32 +217,48 @@ function AnswerChart({ result }: { result: AskResponse }) {
     const value = rows[0]?.[y]
     return typeof value === "number" ? (
       <p className="text-kpi font-semibold text-ink tabular-nums">
-        {VALUE_FORMATTERS[format](value)}
+        {formatterFor(format, locale)(value)}
       </p>
     ) : null
   }
-  if (!chart.x) return null
+  const x = chart.x
+  if (!x) return null
   const data = rows as ChartDatum[]
-  if (chart.type === "line" && rows.every((row) => isIsoDate(row[chart.x!]))) {
+  if (chart.type === "line" && rows.every((row) => isIsoDate(row[x]))) {
     return (
       <MetricLineChart
         data={data}
-        index={chart.x}
+        index={x}
         categories={chart.y}
         colors={chart.y.length > 1 ? ["ochre", "teal"] : ["ochre"]}
         valueFormat={format}
+        locale={locale}
       />
     )
   }
   if (chart.type === "bar" || chart.type === "line") {
     return (
-      <BarChart data={data} index={chart.x} category={y} valueFormat={format} />
+      <BarChart
+        data={data}
+        index={x}
+        category={y}
+        valueFormat={format}
+        locale={locale}
+      />
     )
   }
   return null
 }
 
-function ResultTable({ result }: { result: AskResponse }) {
+function ResultTable({
+  result,
+  locale,
+  t,
+}: {
+  result: AskResponse
+  locale: Locale
+  t: AskMessages
+}) {
   const shown = result.rows.slice(0, 12)
   return (
     <div className="overflow-x-auto">
@@ -263,8 +289,8 @@ function ResultTable({ result }: { result: AskResponse }) {
                     )}
                   >
                     {typeof value === "number"
-                      ? VALUE_FORMATTERS[guessFormat(column)](value)
-                      : formatLabel(value)}
+                      ? formatterFor(guessFormat(column), locale)(value)
+                      : formatLabel(value, locale)}
                   </TableCell>
                 )
               })}
@@ -274,7 +300,7 @@ function ResultTable({ result }: { result: AskResponse }) {
       </Table>
       {result.rows.length > shown.length ? (
         <p className="mt-2 text-xs text-muted">
-          Showing {shown.length} of {result.rows.length} rows.
+          {t.rowsShown(shown.length, result.rows.length)}
         </p>
       ) : null}
     </div>

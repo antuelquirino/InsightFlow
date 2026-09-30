@@ -125,3 +125,31 @@ describe("labels for agent result values", () => {
     expect(formatLabel("Scott and Sons")).toBe("Scott and Sons")
   })
 })
+
+describe("Spanish (Argentina)", () => {
+  const locale = "es" as const
+
+  it("formats money with US$, mil and M", () => {
+    expect(formatCurrency(855.37, { locale })).toBe("US$855")
+    expect(formatCurrency(6217, { locale })).toBe("US$6,2 mil")
+    expect(formatCurrency(297287, { locale })).toBe("US$297 mil")
+    expect(formatCurrency(3567444, { locale })).toBe("US$3,6 M")
+    expect(formatCurrency(-5160, { locale })).toBe(`${MINUS}US$5,2 mil`)
+    expect(formatCurrencyExact(297287, { locale })).toBe("US$297.287")
+  })
+
+  it("uses a decimal comma and thousand dots", () => {
+    expect(formatNumber(1183, { locale })).toBe("1.183")
+    expect(formatPercent(0.0918, { locale })).toBe("9,2%")
+    expect(formatPoints(0.019, { locale })).toBe("+1,9 pp")
+    expect(formatRatio(2.4964, { locale })).toBe("2,5x")
+    expect(formatMonths(6.436, { locale })).toBe("6,4 meses")
+    expect(formatMonths(1, { locale })).toBe("1,0 mes")
+  })
+
+  it("names months in Spanish", () => {
+    expect(formatMonth("2026-08-01", "short", { locale })).toBe("ago 2026")
+    expect(formatMonth("2026-08-01", "long", { locale })).toBe("agosto de 2026")
+    expect(formatMonthEnd("2026-08-01", { locale })).toBe("31 de ago de 2026")
+  })
+})

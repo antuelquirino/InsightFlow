@@ -19,6 +19,7 @@ import {
 import { useSyncExternalStore } from "react"
 
 import { formatCurrency } from "@/lib/format"
+import type { Locale } from "@/lib/locale"
 
 // Seven full labels do not fit under the bars on a phone.
 const NARROW = "(max-width: 640px)"
@@ -50,7 +51,7 @@ interface Bar {
   text: string // the figure above the bar: totals plain, movements signed
 }
 
-function toBars(steps: WaterfallStep[]): Bar[] {
+function toBars(steps: WaterfallStep[], locale: Locale): Bar[] {
   let running = 0
   return steps.map((step) => {
     if (step.kind === "total") {
@@ -61,7 +62,7 @@ function toBars(steps: WaterfallStep[]): Bar[] {
         size: step.value,
         value: step.value,
         kind: step.kind,
-        text: formatCurrency(step.value),
+        text: formatCurrency(step.value, { locale }),
       }
     }
     const from = running
@@ -72,7 +73,7 @@ function toBars(steps: WaterfallStep[]): Bar[] {
       size: Math.abs(step.value),
       value: step.value,
       kind: step.kind,
-      text: formatCurrency(step.value, { signed: true }),
+      text: formatCurrency(step.value, { signed: true, locale }),
     }
   })
 }
@@ -87,14 +88,17 @@ const fillFor = (bar: Bar) =>
 export function Waterfall({
   steps,
   axisFloor,
+  locale = "en",
 }: {
   steps: WaterfallStep[]
+  locale?: Locale
   /** Where the value axis starts; below the smallest running total. */
   axisFloor: number
 }) {
   const narrow = useNarrow()
   const bars = toBars(
     narrow ? steps.map((step) => ({ ...step, label: step.shortLabel })) : steps,
+    locale,
   )
   const top = Math.max(...bars.map((bar) => bar.base + bar.size))
   return (

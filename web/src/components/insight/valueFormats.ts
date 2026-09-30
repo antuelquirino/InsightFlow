@@ -1,3 +1,4 @@
+import { CHANNEL_LABELS, PLAN_LABELS } from "@/lib/entities"
 import {
   formatCurrency,
   formatMonth,
@@ -6,36 +7,48 @@ import {
   formatPercent,
   formatRatio,
 } from "@/lib/format"
-import { CHANNEL_LABELS, PLAN_LABELS } from "@/lib/entities"
+import { MESSAGES } from "@/lib/i18n"
+import type { Locale } from "@/lib/locale"
 
 // Server components cannot pass functions to client components, so charts
-// receive the name of a format and look the formatter up here.
+// receive the name of a format (and the language) and look the formatter up here.
 export type ValueFormat = "currency" | "percent" | "number" | "ratio" | "months"
 
-export const VALUE_FORMATTERS: Record<ValueFormat, (value: number) => string> =
-  {
-    currency: (value) => formatCurrency(value),
-    percent: (value) => formatPercent(value),
-    number: (value) => formatNumber(value, Number.isInteger(value) ? 0 : 1),
-    ratio: (value) => formatRatio(value),
-    months: (value) => formatMonths(value),
+export function formatterFor(
+  format: ValueFormat,
+  locale: Locale = "en",
+): (value: number) => string {
+  switch (format) {
+    case "currency":
+      return (value) => formatCurrency(value, { locale })
+    case "percent":
+      return (value) => formatPercent(value, { locale })
+    case "ratio":
+      return (value) => formatRatio(value, { locale })
+    case "months":
+      return (value) => formatMonths(value, { locale })
+    case "number":
+      return (value) =>
+        formatNumber(value, {
+          decimals: Number.isInteger(value) ? 0 : 1,
+          locale,
+        })
   }
+}
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 
 export const isIsoDate = (value: unknown): value is string =>
   typeof value === "string" && ISO_DATE.test(value)
 
-const ENTITY_LABELS: Record<string, string> = {
-  ...PLAN_LABELS,
-  ...CHANNEL_LABELS,
-}
-
 /** A category label: ISO months become "Aug 2026", plan and channel ids their names. */
-export const formatLabel = (value: unknown): string => {
-  if (isIsoDate(value)) return formatMonth(value)
+export function formatLabel(value: unknown, locale: Locale = "en"): string {
+  if (isIsoDate(value)) return formatMonth(value, "short", { locale })
   const text = String(value ?? "")
-  return ENTITY_LABELS[text] ?? text
+  const channels: Record<string, string> =
+    locale === "en" ? CHANNEL_LABELS : MESSAGES[locale].channels.names
+  const plans: Record<string, string> = PLAN_LABELS
+  return plans[text] ?? channels[text] ?? text
 }
 
 /**

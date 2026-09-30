@@ -174,3 +174,22 @@ describe("trend and channels", () => {
     )
   })
 })
+
+describe("findings in Spanish", () => {
+  it("builds the same findings with Spanish words and formats", () => {
+    expect(bridgeFinding(AUGUST, "es")).toBe(
+      "La expansión superó a las bajas en agosto de 2026",
+    )
+    expect(bridgeSteps(AUGUST, "es").map((s) => s.label)[0]).toBe(
+      "Mes anterior",
+    )
+    const rows = starterVsOthers(
+      [churn("2026-01-01", "starter", 100, 12)],
+      "es",
+    )
+    expect(Object.keys(rows[0])).toContain("Otros planes")
+    expect(starterPeakFinding(rows, "es")).toBe(
+      "Las bajas de Starter tocaron un pico de 12,0% en enero de 2026",
+    )
+  })
+})

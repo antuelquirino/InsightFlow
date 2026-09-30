@@ -19,7 +19,8 @@ import {
   type ChartDatum,
   cssColor,
 } from "@/lib/chartUtils"
-import { formatLabel, VALUE_FORMATTERS, type ValueFormat } from "./valueFormats"
+import type { Locale } from "@/lib/locale"
+import { formatLabel, formatterFor, type ValueFormat } from "./valueFormats"
 
 export function BarChart({
   data,
@@ -27,6 +28,7 @@ export function BarChart({
   category,
   valueFormat,
   colors,
+  locale = "en",
   className,
 }: {
   data: ChartDatum[]
@@ -35,9 +37,10 @@ export function BarChart({
   valueFormat: ValueFormat
   /** One color per row; defaults to the accent for every bar (one series). */
   colors?: AvailableChartColorsKeys[]
+  locale?: Locale
   className?: string
 }) {
-  const format = VALUE_FORMATTERS[valueFormat]
+  const format = formatterFor(valueFormat, locale)
   const rowHeight = 40
   return (
     <div
@@ -54,11 +57,11 @@ export function BarChart({
           <YAxis
             type="category"
             dataKey={index}
-            width={104}
+            width={124}
             axisLine={false}
             tickLine={false}
             tick={{ fill: "var(--graphite)", fontSize: 13 }}
-            tickFormatter={formatLabel}
+            tickFormatter={(value) => formatLabel(value, locale)}
           />
           <Bar
             dataKey={category}

@@ -73,7 +73,10 @@ are not in the rows. Describe comparisons in words instead ("more than doubled",
 
 Write numbers for people: money as whole dollars ($855) or with k/M for large amounts \
 ($297k, $3.6M); rates as percentages with one decimal (9.2%); ratios with one decimal (2.5x); \
-months as "January 2026", never as dates like 2026-01-01.
+months as "January 2026", never as dates like 2026-01-01. Use the number and date conventions of \
+the question's language: in Spanish write US$297 mil, US$3,6 M, 9,2%, 2,5x and "enero de 2026". \
+Name categories as people say them, not as database ids: "paid ads" (Spanish: "anuncios pagos"), \
+not paid_ads. Write plain text: no markdown, no asterisks.
 
 Write:
 - "answer": 1 to 3 sentences that answer the question directly, in the language of the question.

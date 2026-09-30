@@ -2,7 +2,8 @@
 
 import { LineChart } from "@/components/LineChart"
 import type { AvailableChartColorsKeys, ChartDatum } from "@/lib/chartUtils"
-import { formatLabel, VALUE_FORMATTERS, type ValueFormat } from "./valueFormats"
+import type { Locale } from "@/lib/locale"
+import { formatLabel, formatterFor, type ValueFormat } from "./valueFormats"
 
 export type { ValueFormat } from "./valueFormats"
 
@@ -12,6 +13,7 @@ export function MetricLineChart({
   categories,
   colors,
   valueFormat,
+  locale = "en",
   index = "month",
   showLegend,
   className,
@@ -20,6 +22,7 @@ export function MetricLineChart({
   categories: string[]
   colors?: AvailableChartColorsKeys[]
   valueFormat: ValueFormat
+  locale?: Locale
   index?: string
   showLegend?: boolean
   className?: string
@@ -30,11 +33,12 @@ export function MetricLineChart({
       index={index}
       categories={categories}
       colors={colors}
-      valueFormatter={VALUE_FORMATTERS[valueFormat]}
-      indexFormatter={formatLabel}
+      valueFormatter={formatterFor(valueFormat, locale)}
+      indexFormatter={(value) => formatLabel(value, locale)}
       // a single series needs no legend: the section title names it
       showLegend={showLegend ?? categories.length > 1}
-      yAxisWidth={56}
+      // Spanish money ticks ("US$300 mil") are wider than English ones ("$300k")
+      yAxisWidth={valueFormat === "currency" && locale === "es" ? 88 : 64}
       className={className ?? "h-72"}
     />
   )

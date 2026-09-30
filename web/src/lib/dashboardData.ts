@@ -1,16 +1,18 @@
 // Pure transformations from API responses to what the dashboard draws, plus
 // the finding sentences. Every number comes from the API; these functions only
-// reshape, combine and pick.
+// reshape, combine and pick. Words come from lib/i18n.ts.
 
 import type { WaterfallStep } from "@/components/insight/Waterfall"
 import type { ChartDatum } from "./chartUtils"
-import { CHANNEL_LABELS, PLAN_LABELS, PLANS } from "./entities"
+import { PLAN_LABELS, PLANS } from "./entities"
 import {
   formatCurrency,
   formatMonth,
   formatPercent,
   formatRatio,
 } from "./format"
+import { MESSAGES, type BridgeStep } from "./i18n"
+import type { Locale } from "./locale"
 import type {
   ChannelEconomics,
   ChurnPoint,
@@ -32,23 +34,34 @@ export function mrrByPlanRows(series: MrrPoint[]): ChartDatum[] {
 }
 
 /** "Enterprise brings 76% of MRR": the largest plan's share in the last month. */
-export function largestPlanFinding(rows: ChartDatum[]): string {
+export function largestPlanFinding(
+  rows: ChartDatum[],
+  locale: Locale = "en",
+): string {
+  const t = MESSAGES[locale].byPlan
   const last = rows[rows.length - 1]
-  if (!last) return "MRR by plan"
+  if (!last) return t.fallback
   const totals = PLANS.map((plan) => ({
     label: PLAN_LABELS[plan],
     mrr: Number(last[PLAN_LABELS[plan]] ?? 0),
   }))
   const total = totals.reduce((sum, plan) => sum + plan.mrr, 0)
+  if (!total) return t.fallback
   const largest = totals.reduce((best, plan) =>
     plan.mrr > best.mrr ? plan : best,
   )
-  if (!total) return "MRR by plan"
-  return `${largest.label} brings ${formatPercent(largest.mrr / total, { decimals: 0 })} of MRR`
+  return t.finding(
+    largest.label,
+    formatPercent(largest.mrr / total, { decimals: 0, locale }),
+  )
 }
 
 /** Starter's churn against all other plans combined, month by month. */
-export function starterVsOthers(series: ChurnPoint[]): ChartDatum[] {
+export function starterVsOthers(
+  series: ChurnPoint[],
+  locale: Locale = "en",
+): ChartDatum[] {
+  const otherPlans = MESSAGES[locale].churn.otherPlans
   const months = [...new Set(series.map((point) => point.month))].sort()
   return months.map((month) => {
     const rows = series.filter((point) => point.month === month)
@@ -59,47 +72,68 @@ export function starterVsOthers(series: ChurnPoint[]): ChartDatum[] {
     return {
       month,
       Starter: starter?.logo_churn_rate ?? null,
-      "Other plans": atStart ? churned / atStart : null,
+      [otherPlans]: atStart ? churned / atStart : null,
     }
   })
 }
 
 /** "Starter churn peaked at 12.4% in January 2026". */
-export function starterPeakFinding(rows: ChartDatum[]): string {
+export function starterPeakFinding(
+  rows: ChartDatum[],
+  locale: Locale = "en",
+): string {
+  const t = MESSAGES[locale].churn
   const withValues = rows.filter((row) => typeof row.Starter === "number")
-  if (!withValues.length) return "Starter churn"
+  if (!withValues.length) return t.fallback
   const peak = withValues.reduce((best, row) =>
     Number(row.Starter) > Number(best.Starter) ? row : best,
   )
-  return `Starter churn peaked at ${formatPercent(Number(peak.Starter))} in ${formatMonth(String(peak.month), "long")}`
+  return t.finding(
+    formatPercent(Number(peak.Starter), { locale }),
+    formatMonth(String(peak.month), "long", { locale }),
+  )
 }
 
 /** "MRR grew from $135k to $297k" over the rows shown. */
-export function mrrTrendFinding(series: MrrPoint[]): string {
-  if (series.length < 2) return "Monthly recurring revenue"
+export function mrrTrendFinding(
+  series: MrrPoint[],
+  locale: Locale = "en",
+): string {
+  const t = MESSAGES[locale].mrrTrend
+  if (series.length < 2) return t.fallback
   const first = series[0].mrr
   const last = series[series.length - 1].mrr
-  const verb = last >= first ? "grew" : "fell"
-  return `MRR ${verb} from ${formatCurrency(first)} to ${formatCurrency(last)}`
+  return t.finding(
+    last >= first ? "grew" : "fell",
+    formatCurrency(first, { locale }),
+    formatCurrency(last, { locale }),
+  )
 }
 
-const step = (
-  label: string,
-  shortLabel: string,
-  value: number,
-  kind: WaterfallStep["kind"],
-): WaterfallStep => ({ label, shortLabel, value, kind })
-
 /** The waterfall of one month: start, every movement, end. */
-export function bridgeSteps(month: MrrMovementsMonth): WaterfallStep[] {
+export function bridgeSteps(
+  month: MrrMovementsMonth,
+  locale: Locale = "en",
+): WaterfallStep[] {
+  const steps = MESSAGES[locale].bridge.steps
+  const step = (
+    key: BridgeStep,
+    value: number,
+    kind: WaterfallStep["kind"],
+  ): WaterfallStep => ({
+    label: steps[key].label,
+    shortLabel: steps[key].short,
+    value,
+    kind,
+  })
   return [
-    step("Last month", "Start", month.starting_mrr, "total"),
-    step("New", "New", month.new_mrr, "movement"),
-    step("Expansion", "Exp.", month.expansion_mrr, "movement"),
-    step("Contraction", "Contr.", month.contraction_mrr, "movement"),
-    step("Churn", "Churn", month.churned_mrr, "movement"),
-    step("Reactivation", "React.", month.reactivation_mrr, "movement"),
-    step("This month", "End", month.ending_mrr, "total"),
+    step("lastMonth", month.starting_mrr, "total"),
+    step("new", month.new_mrr, "movement"),
+    step("expansion", month.expansion_mrr, "movement"),
+    step("contraction", month.contraction_mrr, "movement"),
+    step("churn", month.churned_mrr, "movement"),
+    step("reactivation", month.reactivation_mrr, "movement"),
+    step("thisMonth", month.ending_mrr, "total"),
   ]
 }
 
@@ -112,34 +146,43 @@ export function bridgeAxisFloor(month: MrrMovementsMonth): number {
     lowest = Math.min(lowest, running)
   }
   const span = Math.max(month.starting_mrr, month.ending_mrr) - lowest
-  const step = 10 ** Math.floor(Math.log10(Math.max(lowest, 1)) - 1)
-  return Math.max(0, Math.floor((lowest - span * 1.5) / step) * step)
+  const unit = 10 ** Math.floor(Math.log10(Math.max(lowest, 1)) - 1)
+  return Math.max(0, Math.floor((lowest - span * 1.5) / unit) * unit)
 }
 
 /** "Expansion outweighed churn in August 2026", or the other way round. */
-export function bridgeFinding(month: MrrMovementsMonth): string {
-  const growth = month.expansion_mrr
-  const losses = Math.abs(month.churned_mrr)
-  const when = formatMonth(month.month, "long")
-  return growth >= losses
-    ? `Expansion outweighed churn in ${when}`
-    : `Churn outweighed expansion in ${when}`
+export function bridgeFinding(
+  month: MrrMovementsMonth,
+  locale: Locale = "en",
+): string {
+  return MESSAGES[locale].bridge.finding(
+    month.expansion_mrr >= Math.abs(month.churned_mrr) ? "expansion" : "churn",
+    formatMonth(month.month, "long", { locale }),
+  )
 }
 
 /** Channels by return per dollar, best first, with the weakest one called out. */
-export function channelReturns(channels: ChannelEconomics[]) {
+export function channelReturns(
+  channels: ChannelEconomics[],
+  locale: Locale = "en",
+) {
+  const t = MESSAGES[locale].channels
   const ranked = channels
     .filter((channel) => channel.ltv_to_cac !== null)
     .sort((a, b) => Number(b.ltv_to_cac) - Number(a.ltv_to_cac))
   const weakest = ranked[ranked.length - 1]
   return {
+    series: t.series,
     rows: ranked.map((channel) => ({
-      channel: CHANNEL_LABELS[channel.acquisition_channel],
-      "LTV to CAC": channel.ltv_to_cac,
+      channel: t.names[channel.acquisition_channel],
+      [t.series]: channel.ltv_to_cac,
     })) as ChartDatum[],
     weakest,
     finding: weakest
-      ? `${CHANNEL_LABELS[weakest.acquisition_channel]} returns the least: a customer is worth ${formatRatio(weakest.ltv_to_cac)} what it cost`
-      : "Return on acquisition by channel",
+      ? t.finding(
+          t.names[weakest.acquisition_channel],
+          formatRatio(weakest.ltv_to_cac, { locale }),
+        )
+      : t.fallback,
   }
 }
