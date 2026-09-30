@@ -102,15 +102,16 @@ export function AskPanel() {
           id="ask-question"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Ask anything about revenue, churn or customers"
+          placeholder="Type your question"
           maxLength={500}
           className={cx(
-            "w-full rounded-md border border-rule bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted",
+            "w-full rounded-md border border-rule bg-paper px-3.5 py-2.5 text-base text-ink placeholder:text-muted",
             focusInput,
           )}
         />
         <Button
           type="submit"
+          className="px-5 text-base"
           disabled={state.kind === "loading" || question.trim().length < 3}
         >
           {state.kind === "loading" ? "Thinking…" : "Ask"}
@@ -125,7 +126,7 @@ export function AskPanel() {
             onClick={() => ask(suggestion)}
             disabled={state.kind === "loading"}
             className={cx(
-              "inline-flex items-center gap-1.5 rounded-full border border-rule bg-surface px-3 py-1 text-left text-xs text-graphite transition-colors hover:border-ochre hover:text-ink disabled:opacity-50",
+              "inline-flex items-center gap-1.5 rounded-full border border-rule bg-paper px-3 py-1 text-left text-xs text-graphite transition-colors hover:border-ochre hover:text-ink disabled:opacity-50",
               focusRing,
             )}
           >
@@ -138,7 +139,7 @@ export function AskPanel() {
         ))}
       </div>
 
-      <div aria-live="polite">
+      <div aria-live="polite" className="empty:hidden">
         {state.kind === "loading" ? (
           <p className="border-t border-rule pt-5 text-sm text-graphite">
             Writing a query for “{state.question}”. This takes a few seconds.

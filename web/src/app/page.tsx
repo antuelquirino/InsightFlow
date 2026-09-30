@@ -50,6 +50,26 @@ export default async function DashboardPage({
         </div>
       </header>
 
+      {/* The AI analyst leads the page: the one boxed element, so it reads as
+          the place to start. It works even if the charts cannot load. */}
+      <section
+        aria-labelledby="ask-title"
+        className="rounded-lg border border-rule bg-surface p-5 sm:p-7"
+      >
+        <h2
+          id="ask-title"
+          className="font-serif text-[1.625rem] leading-tight text-ink"
+        >
+          Ask InsightFlow
+        </h2>
+        <p className="mt-1 mb-5 max-w-2xl text-sm text-graphite">
+          Ask a question about revenue, churn or customers in plain language. An
+          AI analyst answers from the same data as the charts below, and shows
+          the query it ran.
+        </p>
+        <AskPanel />
+      </section>
+
       {!summary ? (
         <ChartError message="The dashboard could not reach its data." />
       ) : (
@@ -79,20 +99,6 @@ export default async function DashboardPage({
               <AtRiskSection />
             </Suspense>
           </div>
-
-          <section
-            aria-labelledby="ask-title"
-            className="border-t border-rule pt-6"
-          >
-            <h2 id="ask-title" className="font-serif text-finding text-ink">
-              Ask InsightFlow
-            </h2>
-            <p className="mt-1 mb-5 text-sm text-muted">
-              An AI analyst answers in plain language from the same data, and
-              shows the query it ran.
-            </p>
-            <AskPanel />
-          </section>
         </>
       )}
 
