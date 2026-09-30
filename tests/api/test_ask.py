@@ -204,3 +204,11 @@ def test_daily_limit_for_everyone(ask_settings):
     assert client.post("/ask", json={"question": QUESTION}).status_code == 200
     response = client.post("/ask", json={"question": QUESTION})
     assert response.status_code == 429 and "daily" in response.json()["detail"]
+
+
+def test_ask_log_can_go_to_stdout(ask_settings, capsys):
+    stdout_settings = ask_settings.model_copy(update={"ask_log_path": "-"})
+    make_client(stdout_settings, FakeLLM(GOOD_SQL, GOOD_ANSWER)).post("/ask", json={"question": QUESTION})
+    line = capsys.readouterr().out.strip().splitlines()[-1]
+    entry = json.loads(line)
+    assert entry["message"] == "ask" and entry["question"] == QUESTION
