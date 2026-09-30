@@ -49,7 +49,7 @@ Columns:
 
 ## `insightflow-analytics-489617.dbt_marts.fct_churn`
 
-Logo churn and revenue churn per month, in total and broken down by plan or by acquisition channel. Filter on breakdown ('total', 'plan' or 'channel') and read breakdown_value. A customer counts under the plan it had at the previous month end, so upgrades and downgrades are never churn. Amounts here are positive USD. Monthly churn is noisy for small groups: to compare plans or channels, aggregate at least 12 months, as sum(churned_customers) / sum(customers_at_start); for channels, fct_unit_economics.monthly_logo_churn_rate already holds that trailing 12-month rate. To study the effect of a price change, take its date from dim_plans.valid_from and compare the months before and after it.
+Logo churn and revenue churn per month, in total and broken down by plan or by acquisition channel. Filter on breakdown ('total', 'plan' or 'channel') and read breakdown_value. A customer counts under the plan it had at the previous month end, so upgrades and downgrades are never churn. Amounts here are positive USD. Monthly churn is noisy for small groups: to compare plans or channels, aggregate at least 12 months, as sum(churned_customers) / sum(customers_at_start); for channels, fct_unit_economics.monthly_logo_churn_rate already holds that trailing 12-month rate. To study the effect of a price change, take its date from dim_plans.valid_from and compare the months before and after it. Customers react to a price change over the following months, as they decide whether to keep paying, so a churn rise in the months right after the change is its effect even when the peak is not in the month of the change itself.
 
 Columns:
 - month (DATE): First day of the month.

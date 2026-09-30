@@ -105,6 +105,10 @@ models:
       fct_unit_economics.monthly_logo_churn_rate already holds that trailing
       12-month rate. To study the effect of a price change, take its date from
       dim_plans.valid_from and compare the months before and after it.
+      Customers react to a price change over the following months, as they
+      decide whether to keep paying, so a churn rise in the months right after
+      the change is its effect even when the peak is not in the month of the
+      change itself.
     data_tests:
       - unique_combination:
           arguments:
