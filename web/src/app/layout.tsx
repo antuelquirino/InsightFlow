@@ -1,15 +1,24 @@
 import type { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
-import { Inter } from "next/font/google"
+import { IBM_Plex_Sans, Newsreader } from "next/font/google"
 import "./globals.css"
 import { siteConfig } from "./siteConfig"
 
 import { Sidebar } from "@/components/ui/navigation/Sidebar"
 
-const inter = Inter({
+// Interface and numbers: tabular figures, legible at small sizes.
+const plex = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  display: "swap",
+  variable: "--font-plex",
+})
+
+// Findings only: a serif made for reading news on screens.
+const newsreader = Newsreader({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-newsreader",
 })
 
 export const metadata: Metadata = {
@@ -34,17 +43,23 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.className} overflow-y-scroll scroll-auto antialiased selection:bg-indigo-100 selection:text-indigo-700 dark:bg-gray-950`}
-        suppressHydrationWarning
-      >
-        <div className="mx-auto max-w-(--breakpoint-2xl)">
-          <ThemeProvider defaultTheme="system" attribute="class">
+    <html
+      lang="en"
+      className={`${plex.variable} ${newsreader.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="overflow-y-scroll font-sans antialiased">
+        {/* Light by default, whatever the OS says; the reader's choice is remembered. */}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={false}
+        >
+          <div className="mx-auto max-w-(--breakpoint-2xl)">
             <Sidebar />
-            <main className="lg:pl-72">{children}</main>
-          </ThemeProvider>
-        </div>
+            <main className="lg:pl-60">{children}</main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )

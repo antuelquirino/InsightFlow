@@ -26,7 +26,7 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
       onClick={column.getToggleSortingHandler()}
       className={cx(
         column.columnDef.enableSorting === true
-          ? "-mx-2 inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 select-none hover:bg-gray-50 dark:hover:bg-gray-900"
+          ? "-mx-2 inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 select-none hover:bg-wash"
           : "",
       )}
     >
@@ -35,14 +35,14 @@ export function DataTableColumnHeader<TData extends RowData, TValue>({
         <div className="-space-y-2">
           <RiArrowUpSLine
             className={cx(
-              "size-3.5 text-gray-900 dark:text-gray-50",
+              "size-3.5 text-ink",
               column.getIsSorted() === "desc" ? "opacity-30" : "",
             )}
             aria-hidden="true"
           />
           <RiArrowDownSLine
             className={cx(
-              "size-3.5 text-gray-900 dark:text-gray-50",
+              "size-3.5 text-ink",
               column.getIsSorted() === "asc" ? "opacity-30" : "",
             )}
             aria-hidden="true"

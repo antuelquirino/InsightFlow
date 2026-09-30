@@ -24,3 +24,35 @@ jobs:
       - name: dbt parse (no BigQuery connection)
         working-directory: dbt_insightflow
         run: dbt parse --profiles-dir .
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build (no API needed)
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+

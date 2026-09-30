@@ -56,7 +56,7 @@ const LegendItem = ({
         // base
         "group inline-flex flex-nowrap items-center gap-1.5 rounded-sm px-2 py-1 whitespace-nowrap transition",
         hasOnValueChange
-          ? "bg-transpaent cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+          ? "cursor-pointer bg-transparent hover:bg-wash"
           : "cursor-default",
       )}
       onClick={(e) => {
@@ -77,9 +77,8 @@ const LegendItem = ({
           // base
           "truncate text-xs whitespace-nowrap",
           // text color
-          "text-gray-700 dark:text-gray-300",
-          hasOnValueChange &&
-            "group-hover:text-gray-900 dark:group-hover:text-gray-50",
+          "text-graphite",
+          hasOnValueChange && "group-hover:text-ink",
           activeLegend && activeLegend !== name ? "opacity-40" : "opacity-100",
         )}
       >
@@ -121,8 +120,8 @@ const ScrollButton = ({ icon, onClick, disabled }: ScrollButtonProps) => {
         // base
         "group inline-flex size-5 items-center truncate rounded-sm transition",
         disabled
-          ? "cursor-not-allowed text-gray-400 dark:text-gray-600"
-          : "cursor-pointer text-gray-700 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-50",
+          ? "cursor-not-allowed text-muted"
+          : "cursor-pointer text-graphite hover:bg-wash hover:text-ink",
       )}
       disabled={disabled}
       onClick={(e) => {
@@ -283,7 +282,7 @@ const Legend = React.forwardRef<HTMLOListElement, LegendProps>((props, ref) => {
               // base
               "absolute top-0 right-0 bottom-0 flex h-full items-center justify-center pr-1",
               // background color
-              "bg-white dark:bg-gray-950",
+              "bg-surface",
             )}
           >
             <ScrollButton
@@ -336,7 +335,7 @@ const ChartLegend = (
       <Legend
         categories={categories}
         colors={categories.map(
-          (category) => categoryColors.get(category) ?? "gray",
+          (category) => categoryColors.get(category) ?? "muted",
         )}
         onClickLegendItem={onClick}
         activeLegend={activeLegend}
@@ -366,7 +365,7 @@ const ChartTooltipRow = ({ value, name, color }: ChartTooltipRowProps) => (
           // commmon
           "text-right whitespace-nowrap",
           // text color
-          "text-gray-700 dark:text-gray-300",
+          "text-graphite",
         )}
       >
         {name}
@@ -377,7 +376,7 @@ const ChartTooltipRow = ({ value, name, color }: ChartTooltipRowProps) => (
         // base
         "text-right font-medium whitespace-nowrap tabular-nums",
         // text color
-        "text-gray-900 dark:text-gray-50",
+        "text-ink",
       )}
     >
       {value}
@@ -408,11 +407,11 @@ const ChartTooltip = ({
       <div
         className={cx(
           // base
-          "rounded-md border text-sm shadow-md",
+          "rounded-md border text-sm",
           // border color
-          "border-gray-200 dark:border-gray-800",
+          "border-rule",
           // background color
-          "bg-white dark:bg-gray-950",
+          "bg-surface",
         )}
       >
         <div className="flex items-start justify-between gap-2 border-b border-inherit p-2">
@@ -421,7 +420,7 @@ const ChartTooltip = ({
               // base
               "font-medium",
               // text color
-              "text-gray-900 dark:text-gray-50",
+              "text-ink",
             )}
           >
             {title}
@@ -469,6 +468,8 @@ interface LineChartProps extends React.HTMLAttributes<HTMLDivElement> {
   categories: string[]
   colors?: AvailableChartColorsKeys[]
   valueFormatter?: (value: number) => string
+  /** Formats x-axis ticks and the tooltip title, e.g. "2026-08-01" -> "Aug 2026". */
+  indexFormatter?: (value: string) => string
   startEndOnly?: boolean
   showXAxis?: boolean
   showYAxis?: boolean
@@ -497,6 +498,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
       index,
       colors = AvailableChartColors,
       valueFormatter = (value: number) => value.toString(),
+      indexFormatter = (value: string) => value,
       startEndOnly = false,
       showXAxis = true,
       showYAxis = true,
@@ -600,7 +602,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
           >
             {showGridLines ? (
               <CartesianGrid
-                className={cx("stroke-gray-200 stroke-1 dark:stroke-gray-800")}
+                className={cx("stroke-rule stroke-1")}
                 horizontal={true}
                 vertical={false}
               />
@@ -609,8 +611,13 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               padding={{ left: paddingValue, right: paddingValue }}
               hide={!showXAxis}
               dataKey={index}
+              tickFormatter={(value) => indexFormatter(String(value))}
               interval={startEndOnly ? "preserveStartEnd" : intervalType}
-              tick={{ transform: "translate(0, 6)" }}
+              tick={{
+                transform: "translate(0, 6)",
+                fill: "var(--muted)",
+                fontSize: 12,
+              }}
               ticks={
                 startEndOnly
                   ? [data[0][index], data[data.length - 1][index]].filter(
@@ -622,9 +629,9 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               stroke=""
               className={cx(
                 // base
-                "text-xs",
+                "text-xs tabular-nums",
                 // text fill
-                "fill-gray-500 dark:fill-gray-500",
+                "fill-muted",
               )}
               tickLine={false}
               axisLine={false}
@@ -634,7 +641,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                 <Label
                   position="insideBottom"
                   offset={-20}
-                  className="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+                  className="fill-ink text-sm font-medium"
                 >
                   {xAxisLabel}
                 </Label>
@@ -647,14 +654,18 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               tickLine={false}
               type="number"
               domain={yAxisDomain as AxisDomain}
-              tick={{ transform: "translate(-3, 0)" }}
+              tick={{
+                transform: "translate(-3, 0)",
+                fill: "var(--muted)",
+                fontSize: 12,
+              }}
               fill=""
               stroke=""
               className={cx(
                 // base
-                "text-xs",
+                "text-xs tabular-nums",
                 // text fill
-                "fill-gray-500 dark:fill-gray-500",
+                "fill-muted",
               )}
               tickFormatter={valueFormatter}
               allowDecimals={allowDecimals}
@@ -665,7 +676,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                   style={{ textAnchor: "middle" }}
                   angle={-90}
                   offset={-15}
-                  className="fill-gray-800 text-sm font-medium dark:fill-gray-200"
+                  className="fill-ink text-sm font-medium"
                 >
                   {yAxisLabel}
                 </Label>
@@ -675,7 +686,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
               wrapperStyle={{ outline: "none" }}
               isAnimationActive={true}
               animationDuration={100}
-              cursor={{ stroke: "#d1d5db", strokeWidth: 1 }}
+              cursor={{ stroke: "var(--rule)", strokeWidth: 1 }}
               offset={20}
               position={{ y: 0 }}
               content={
@@ -684,7 +695,9 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                     <ChartTooltip
                       active={active}
                       payload={payload}
-                      label={label === undefined ? "" : String(label)}
+                      label={
+                        label === undefined ? "" : indexFormatter(String(label))
+                      }
                       valueFormatter={valueFormatter}
                       categoryColors={categoryColors}
                     />
@@ -739,7 +752,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                   return (
                     <Dot
                       className={cx(
-                        "stroke-white dark:stroke-gray-950",
+                        "stroke-surface",
                         onValueChange ? "cursor-pointer" : "",
                         getColorClassName(
                           categoryColors.get(
@@ -793,7 +806,7 @@ const LineChart = React.forwardRef<HTMLDivElement, LineChartProps>(
                         strokeLinejoin={strokeLinejoin}
                         strokeWidth={strokeWidth}
                         className={cx(
-                          "stroke-white dark:stroke-gray-950",
+                          "stroke-surface",
                           onValueChange ? "cursor-pointer" : "",
                           getColorClassName(
                             categoryColors.get(

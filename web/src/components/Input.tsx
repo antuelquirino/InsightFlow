@@ -1,3 +1,5 @@
+"use client"
+
 // Tremor Raw Input [v1.0.3]
 
 import { RiEyeFill, RiEyeOffFill, RiSearchLine } from "@remixicon/react"
@@ -9,29 +11,29 @@ import { cx, focusInput, focusRing, hasErrorInput } from "@/lib/utils"
 const inputStyles = tv({
   base: [
     // base
-    "relative block w-full appearance-none truncate rounded-md border px-2.5 py-2 shadow-xs outline-hidden transition sm:text-sm",
+    "relative block w-full appearance-none truncate rounded-md border px-2.5 py-2 outline-hidden transition sm:text-sm",
     // border color
-    "border-gray-300 dark:border-gray-800",
+    "border-rule",
     // text color
-    "text-gray-900 dark:text-gray-50",
+    "text-ink",
     // placeholder color
-    "placeholder-gray-400 dark:placeholder-gray-500",
+    "placeholder-gray-400",
     // background color
-    "bg-white dark:bg-gray-950",
+    "bg-surface",
     // disabled
-    "disabled:border-gray-300 disabled:bg-gray-100 disabled:text-gray-400",
-    "dark:disabled:border-gray-700 dark:disabled:bg-gray-800 dark:disabled:text-gray-500",
+    "disabled:border-rule disabled:bg-wash disabled:text-muted",
+    "",
     // file
     [
-      "file:-my-2 file:-ml-2.5 file:cursor-pointer file:rounded-l-[5px] file:rounded-r-none file:border-0 file:px-3 file:py-2 file:outline-hidden focus:outline-hidden disabled:pointer-events-none file:disabled:pointer-events-none",
-      "file:border-solid file:border-gray-300 file:bg-gray-50 file:text-gray-500 file:hover:bg-gray-100 dark:file:border-gray-800 dark:file:bg-gray-950 dark:file:hover:bg-gray-900/20 dark:file:disabled:border-gray-700",
+      "file:-my-2 file:-ml-2.5 file:cursor-pointer file:rounded-l-[5px] file:rounded-r-none file:border-0 file:px-3 file:py-2 file:outline-hidden focus:outline-hidden disabled:pointer-events-none disabled:file:pointer-events-none",
+      "file:border-solid file:border-rule file:bg-wash file:text-muted file:hover:bg-wash",
       "file:me-3 file:[border-inline-end-width:1px]",
-      "file:disabled:bg-gray-100 file:disabled:text-gray-500 dark:file:disabled:bg-gray-800",
+      "disabled:file:bg-wash disabled:file:text-muted",
     ],
     // focus
     focusInput,
     // invalid (optional)
-    // "dark:aria-invalid:ring-red-400/20 aria-invalid:ring-2 aria-invalid:ring-red-200 aria-invalid:border-red-500 invalid:ring-2 invalid:ring-red-200 invalid:border-red-500"
+    // " aria-invalid:ring-2 aria-invalid:ring-loss/20 aria-invalid:border-loss invalid:ring-2 invalid:ring-loss/20 invalid:border-loss"
     // remove search cancel button (optional)
     "[&::--webkit-search-cancel-button]:hidden [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden",
   ],
@@ -92,7 +94,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
               // base
               "pointer-events-none absolute bottom-0 left-2 flex h-full items-center justify-center",
               // text color
-              "text-gray-400 dark:text-gray-600",
+              "text-muted",
             )}
           >
             <RiSearchLine className="size-4.5 shrink-0" aria-hidden="true" />
@@ -110,9 +112,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                 // base
                 "h-fit w-fit rounded-xs outline-hidden transition-all",
                 // text
-                "text-gray-400 dark:text-gray-600",
+                "text-muted",
                 // hover
-                "hover:text-gray-500 dark:hover:text-gray-500",
+                "hover:text-muted",
                 focusRing,
               )}
               type="button"

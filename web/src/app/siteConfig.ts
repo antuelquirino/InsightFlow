@@ -9,6 +9,7 @@ export const siteConfig = {
     retention: "/retention",
     customers: "/customers",
     ask: "/ask",
+    styleguide: "/styleguide",
   },
 }
 

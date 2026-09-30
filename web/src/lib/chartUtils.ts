@@ -2,54 +2,52 @@
 
 export type ColorUtility = "bg" | "stroke" | "fill" | "text"
 
+// Chart colors map to the design tokens in globals.css. The four series colors
+// were validated together, in this order, for colorblind separation and
+// contrast in both modes; "muted" is for context series next to a highlighted
+// one, and gain/loss only for changes that mean "improves" / "worsens".
 export const chartColors = {
+  ochre: {
+    bg: "bg-series-1",
+    stroke: "stroke-series-1",
+    fill: "fill-series-1",
+    text: "text-series-1",
+  },
+  teal: {
+    bg: "bg-series-2",
+    stroke: "stroke-series-2",
+    fill: "fill-series-2",
+    text: "text-series-2",
+  },
+  plum: {
+    bg: "bg-series-3",
+    stroke: "stroke-series-3",
+    fill: "fill-series-3",
+    text: "text-series-3",
+  },
   blue: {
-    bg: "bg-blue-500",
-    stroke: "stroke-blue-500",
-    fill: "fill-blue-500",
-    text: "text-blue-500",
+    bg: "bg-series-4",
+    stroke: "stroke-series-4",
+    fill: "fill-series-4",
+    text: "text-series-4",
   },
-  emerald: {
-    bg: "bg-emerald-500",
-    stroke: "stroke-emerald-500",
-    fill: "fill-emerald-500",
-    text: "text-emerald-500",
+  muted: {
+    bg: "bg-series-muted",
+    stroke: "stroke-series-muted",
+    fill: "fill-series-muted",
+    text: "text-muted",
   },
-  violet: {
-    bg: "bg-violet-500",
-    stroke: "stroke-violet-500",
-    fill: "fill-violet-500",
-    text: "text-violet-500",
+  gain: {
+    bg: "bg-gain",
+    stroke: "stroke-gain",
+    fill: "fill-gain",
+    text: "text-gain",
   },
-  amber: {
-    bg: "bg-amber-500",
-    stroke: "stroke-amber-500",
-    fill: "fill-amber-500",
-    text: "text-amber-500",
-  },
-  gray: {
-    bg: "bg-gray-400 dark:bg-gray-600",
-    stroke: "stroke-gray-400 dark:stroke-gray-600",
-    fill: "fill-gray-400 dark:fill-gray-600",
-    text: "text-gray-400 dark:text-gray-600",
-  },
-  cyan: {
-    bg: "bg-cyan-500",
-    stroke: "stroke-cyan-500",
-    fill: "fill-cyan-500",
-    text: "text-cyan-500",
-  },
-  indigo: {
-    bg: "bg-indigo-600 dark:bg-indigo-500",
-    stroke: "stroke-indigo-600 dark:stroke-indigo-500",
-    fill: "fill-indigo-600 dark:fill-indigo-500",
-    text: "text-indigo-600 dark:text-indigo-500",
-  },
-  pink: {
-    bg: "bg-pink-500",
-    stroke: "stroke-pink-500",
-    fill: "fill-pink-500",
-    text: "text-pink-500",
+  loss: {
+    bg: "bg-loss",
+    stroke: "stroke-loss",
+    fill: "fill-loss",
+    text: "text-loss",
   },
 } as const satisfies {
   [color: string]: {
@@ -59,17 +57,23 @@ export const chartColors = {
 
 export type AvailableChartColorsKeys = keyof typeof chartColors
 
-export const AvailableChartColors: AvailableChartColorsKeys[] = Object.keys(
-  chartColors,
-) as Array<AvailableChartColorsKeys>
+// Series colors in their validated order.
+export const AvailableChartColors: AvailableChartColorsKeys[] = [
+  "ochre",
+  "teal",
+  "plum",
+  "blue",
+]
 
+// Colors are assigned in order and never cycled: a category past the last
+// color becomes a muted context series instead of repeating a hue.
 export const constructCategoryColors = (
   categories: string[],
   colors: AvailableChartColorsKeys[],
 ): Map<string, AvailableChartColorsKeys> => {
   const categoryColors = new Map<string, AvailableChartColorsKeys>()
   categories.forEach((category, index) => {
-    categoryColors.set(category, colors[index % colors.length])
+    categoryColors.set(category, colors[index] ?? "muted")
   })
   return categoryColors
 }
@@ -77,15 +81,7 @@ export const constructCategoryColors = (
 export const getColorClassName = (
   color: AvailableChartColorsKeys,
   type: ColorUtility,
-): string => {
-  const fallbackColor = {
-    bg: "bg-gray-500",
-    stroke: "stroke-gray-500",
-    fill: "fill-gray-500",
-    text: "text-gray-500",
-  }
-  return chartColors[color]?.[type] ?? fallbackColor[type]
-}
+): string => chartColors[color]?.[type] ?? chartColors.muted[type]
 
 // Tremor Raw getYAxisDomain [v0.0.0]
 

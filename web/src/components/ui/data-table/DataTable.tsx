@@ -44,10 +44,7 @@ export function DataTable<TData extends RowData>({
         <Table>
           <TableHead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="border-y border-gray-200 dark:border-gray-800"
-              >
+              <TableRow key={headerGroup.id} className="border-y border-rule">
                 {headerGroup.headers.map((header) => (
                   <TableHeaderCell
                     key={header.id}
@@ -68,15 +65,12 @@ export function DataTable<TData extends RowData>({
           <TableBody>
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-900"
-                >
+                <TableRow key={row.id} className="hover:bg-wash">
                   {row.getAllCells().map((cell) => (
                     <TableCell
                       key={cell.id}
                       className={cx(
-                        "py-1 whitespace-nowrap text-gray-600 dark:text-gray-400",
+                        "py-1 whitespace-nowrap text-graphite",
                         cell.column.columnDef.meta?.className,
                       )}
                     >

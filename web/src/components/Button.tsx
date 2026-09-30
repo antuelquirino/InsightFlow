@@ -7,84 +7,23 @@ import { tv, type VariantProps } from "tailwind-variants"
 
 import { cx, focusRing } from "@/lib/utils"
 
+// No shadows anywhere: buttons are flat, separated by color and a hairline.
 const buttonVariants = tv({
   base: [
     // base
-    "relative inline-flex items-center justify-center rounded-md border px-3 py-2 text-center text-sm font-medium whitespace-nowrap shadow-xs transition-all duration-100 ease-in-out",
+    "relative inline-flex items-center justify-center rounded-md border px-3 py-2 text-center text-sm font-medium whitespace-nowrap transition-colors duration-100 ease-in-out",
     // disabled
-    "disabled:pointer-events-none disabled:shadow-none",
+    "disabled:pointer-events-none disabled:opacity-50",
     // focus
     focusRing,
   ],
   variants: {
     variant: {
-      primary: [
-        // border
-        "border-transparent",
-        // text color
-        "text-white dark:text-gray-900",
-        // background color
-        "bg-indigo-600 dark:bg-indigo-500",
-        // hover color
-        "hover:bg-indigo-500 dark:hover:bg-indigo-600",
-        // disabled
-        "disabled:bg-indigo-100 disabled:text-gray-400",
-        "dark:disabled:bg-indigo-800 dark:disabled:text-indigo-400",
-      ],
-      secondary: [
-        // border
-        "border-gray-300 dark:border-gray-800",
-        // text color
-        "text-gray-900 dark:text-gray-50",
-        // background color
-        "bg-white dark:bg-gray-950",
-        //hover color
-        "hover:bg-gray-50 dark:hover:bg-gray-900/60",
-        // disabled
-        "disabled:text-gray-400",
-        "dark:disabled:text-gray-600",
-      ],
-      light: [
-        // base
-        "shadow-none",
-        // border
-        "border-transparent",
-        // text color
-        "text-gray-900 dark:text-gray-50",
-        // background color
-        "bg-gray-200 dark:bg-gray-900",
-        // hover color
-        "hover:bg-gray-300/70 dark:hover:bg-gray-800/80",
-        // disabled
-        "disabled:bg-gray-100 disabled:text-gray-400",
-        "dark:disabled:bg-gray-800 dark:disabled:text-gray-600",
-      ],
-      ghost: [
-        // base
-        "shadow-none",
-        // border
-        "border-transparent",
-        // text color
-        "text-gray-900 dark:text-gray-50",
-        // hover color
-        "bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800/80",
-        // disabled
-        "disabled:text-gray-400",
-        "dark:disabled:text-gray-600",
-      ],
-      destructive: [
-        // text color
-        "text-white",
-        // border
-        "border-transparent",
-        // background color
-        "bg-red-600 dark:bg-red-700",
-        // hover color
-        "hover:bg-red-700 dark:hover:bg-red-600",
-        // disabled
-        "disabled:bg-red-300 disabled:text-white",
-        "dark:disabled:bg-red-950 dark:disabled:text-red-400",
-      ],
+      // The one call to action on a view, in the accent.
+      primary: "border-transparent bg-ochre text-on-ochre hover:bg-ochre/90",
+      secondary: "border-rule bg-surface text-ink hover:bg-wash",
+      light: "border-transparent bg-wash text-ink hover:bg-rule",
+      ghost: "border-transparent bg-transparent text-ink hover:bg-wash",
     },
   },
   defaultVariants: {

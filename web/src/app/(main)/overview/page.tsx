@@ -1,8 +1,4 @@
 // Placeholder until the Overview screen is built.
 export default function OverviewPage() {
-  return (
-    <h1 className="text-lg font-semibold text-gray-900 sm:text-xl dark:text-gray-50">
-      Overview
-    </h1>
-  )
+  return <h1 className="text-lg font-semibold text-ink sm:text-xl">Overview</h1>
 }

@@ -57,15 +57,12 @@ export function DataTablePagination<TData extends RowData>({
   return (
     <div className="flex items-center justify-end">
       <div className="flex items-center gap-x-6 lg:gap-x-8">
-        <p className="hidden text-sm text-gray-500 tabular-nums sm:block">
+        <p className="hidden text-sm text-muted tabular-nums sm:block">
           Showing{" "}
-          <span className="font-medium text-gray-900 dark:text-gray-50">
+          <span className="font-medium text-ink">
             {firstRowIndex}-{lastRowIndex}
           </span>{" "}
-          of{" "}
-          <span className="font-medium text-gray-900 dark:text-gray-50">
-            {totalRows}
-          </span>
+          of <span className="font-medium text-ink">{totalRows}</span>
         </p>
         <div className="flex items-center gap-x-1.5">
           {paginationButtons.map((button, index) => (
