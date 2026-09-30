@@ -14,7 +14,7 @@ reutilizar en demos para pymes.
 - [x] Fase 1: datos sintéticos estáticos con historia y dbt reorganizado
 - [x] Fase 2: API en FastAPI (métricas y agente)
 - [x] Fase 3: frontend en Next.js
-- [ ] Fase 4: despliegue (API en Cloud Run, frontend en Vercel)
+- [x] Fase 4: despliegue (API en Cloud Run, frontend en Vercel)
 
 La app anterior en Streamlit (`agent/`) se mantiene funcionando hasta que el nuevo
 frontend la reemplace, y después se elimina.
@@ -103,6 +103,30 @@ frontend la reemplace, y después se elimina.
 - **Referencia de diseño:** `/styleguide` (en inglés), enlazada desde el pie.
 - **En Windows local** el puerto 8000 está reservado por el sistema: la API corre
   en 8765 (`web/.env.local` apunta ahí).
+
+## Estado del despliegue (Fase 4)
+- **Web:** https://insight-flow-five-beta.vercel.app (Vercel, raíz `web`, se
+  publica con cada push a `main`). Variables `API_URL` y `NEXT_PUBLIC_API_URL`
+  con la URL de la API; la segunda queda dentro del código del navegador, así
+  que cambiarla requiere redeploy.
+- **API:** https://insightflow-api-936762673660.europe-west1.run.app (Cloud Run,
+  `europe-west1`, servicio `insightflow-api`, 0 a 1 instancia). Redeploy:
+  `gcloud run deploy insightflow-api --source . --region europe-west1 --project insightflow-analytics-489617`
+  (conserva la configuración). `ALLOWED_ORIGINS` tiene el dominio de Vercel y
+  localhost; si cambia el dominio, actualizarlo con
+  `gcloud run services update ... --update-env-vars`.
+- **Permisos:** cuenta de servicio `insightflow-api@...` con
+  `bigquery.jobUser` en el proyecto y lectura solo sobre `dbt_marts`.
+- **Secreto:** la key de OpenAI está en Secret Manager (`openai-api-key`).
+  Para rotarla: `gcloud secrets versions add openai-api-key --data-file=-` y
+  redeploy.
+- **Logs:** `/ask` escribe a stdout (`ASK_LOG_PATH=-`) y se lee en Cloud
+  Logging con `jsonPayload.message="ask"`.
+- **Costos:** facturación activa con alerta de presupuesto de US$5 (avisos al
+  50, 90 y 100%). Los datasets ya no tienen vencimiento de tablas (el sandbox
+  borraba las tablas a los 60 días).
+- **Idioma del agente:** el chat manda `language` (`en`/`es`) y la respuesta
+  usa sus formatos; una respuesta con palabras en otro alfabeto se reescribe.
 
 ## Estructura objetivo
 ```

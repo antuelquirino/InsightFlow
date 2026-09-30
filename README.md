@@ -5,6 +5,10 @@ data in BigQuery, modeled with dbt into business metrics (MRR, churn,
 retention, unit economics), served by an API to a one-page web dashboard with
 an AI analyst that answers business questions in plain English or Spanish.
 
+**Live:** [insight-flow-five-beta.vercel.app](https://insight-flow-five-beta.vercel.app/)
+(Spanish at [/es](https://insight-flow-five-beta.vercel.app/es)) ·
+[API docs](https://insightflow-api-936762673660.europe-west1.run.app/docs)
+
 ![The InsightFlow dashboard](docs/screenshots/dashboard-en.png)
 
 The data is not random noise. It is generated to hide five business stories
@@ -15,12 +19,12 @@ real to find.
 
 ## Status
 
-The project is being rebuilt in four phases:
+The project was rebuilt in four phases:
 
 - [x] **Phase 1 — Data:** deterministic synthetic history and layered dbt models
 - [x] **Phase 2 — API:** FastAPI service for metrics and the agent
 - [x] **Phase 3 — Web:** Next.js dashboard with the AI analyst, in English and Spanish
-- [ ] **Phase 4 — Deploy:** API on Cloud Run, web on Vercel
+- [x] **Phase 4 — Deploy:** API on Cloud Run, web on Vercel
 
 The previous version, a Streamlit app in `agent/`, is still
 [live](https://insightflow-agent2.streamlit.app/) on the legacy tables until
@@ -172,13 +176,15 @@ memory, since the data is static.
 3. It runs with a cap on bytes billed. A rejected query, a BigQuery error or an
    empty result goes back to the model once.
 4. A second call reads the real rows and writes the answer, an insight and a
-   chart suggestion. Every number in the answer is checked against the rows;
-   an answer that cites anything else is rewritten once, then replaced by a
-   neutral answer next to the data.
+   chart suggestion, in the page's language (`language`: `en` or `es`) with
+   its number formats. Every number in the answer is checked against the rows,
+   and every word must be in the Latin script; an answer that fails is
+   rewritten once, then replaced by a neutral answer next to the data.
 
 `/ask` allows 5 questions per minute per client and 200 per day in total, and
 logs every question, SQL attempt, validation result and duration to
-`logs/ask.jsonl`. The LLM provider is confined to `api/llm.py`.
+`logs/ask.jsonl` (to stdout, and so Cloud Logging, in production). The LLM
+provider is confined to `api/llm.py`.
 
 ## Web
 
@@ -242,12 +248,39 @@ The API must allow the web origin (`ALLOWED_ORIGINS`, default
   check, tests and a production build, on every push, without connecting to
   BigQuery or the LLM.
 
+## Deployment
+
+- **API on Cloud Run** (`europe-west1`, next to the EU data), built from the
+  root `Dockerfile`, which holds only `api/`. It scales from 0 to at most 1
+  instance and runs as its own service account, which can run BigQuery jobs
+  and read `dbt_marts` and nothing else. The OpenAI key lives in Secret
+  Manager.
+
+  ```bash
+  gcloud run deploy insightflow-api --source . --region europe-west1     --project insightflow-analytics-489617
+  ```
+
+  A redeploy keeps the service settings. They were set on the first deploy:
+  `--service-account insightflow-api@insightflow-analytics-489617.iam.gserviceaccount.com
+  --max-instances 1 --min-instances 0 --allow-unauthenticated
+  --set-secrets OPENAI_API_KEY=openai-api-key:latest`, plus the env vars
+  `LLM_MODEL` and `ALLOWED_ORIGINS` (the Vercel domain and localhost).
+  `.gcloudignore` keeps the upload to what the image needs.
+- **Web on Vercel**, from the GitHub repo with root directory `web`. Every
+  push to `main` deploys. `API_URL` and `NEXT_PUBLIC_API_URL` point to the
+  Cloud Run URL; the second is built into the browser code, so changing it
+  needs a redeploy.
+
 ## Cost
 
 The whole dataset is a few MB. A full `dbt build` processes about 10 MB; since
 BigQuery bills at least 10 MB per table read, it is billed as roughly 1 GB,
 under one cent at on-demand prices and inside the monthly free tier. dbt
 queries are capped with `maximum_bytes_billed`.
+
+In production, Cloud Run scales to zero and stays inside its free tier at demo
+traffic; metrics are cached in memory, and `/ask` is capped per minute, per
+day and in bytes billed. A US$5 budget alert watches the project.
 
 ## Project structure
 
