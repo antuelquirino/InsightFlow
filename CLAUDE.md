@@ -49,8 +49,24 @@ frontend la reemplace, y después se elimina.
 - **Transformación:** dbt Core con dbt-bigquery.
 - **API:** FastAPI (Python 3.11+). Toda consulta a BigQuery pasa por la API; el
   frontend nunca habla con BigQuery directamente.
-- **Frontend:** Next.js (App Router) con TypeScript, Tailwind y shadcn/ui; gráficos
-  con Recharts.
+- **Frontend:** Next.js (App Router) con TypeScript y Tailwind, a partir del
+  template "Dashboard" de Tremor (MIT, en `web/`). Se reutilizan sus componentes
+  (Tremor Raw, copiados en el repo); no se instala `@tremor/react` ni otra librería
+  de componentes o gráficos. Los gráficos que faltan se hacen con Recharts. npm como
+  gestor de paquetes.
+- **Versiones del frontend:** se migra a las últimas versiones mayores (Next.js,
+  React, Tailwind, Recharts y demás) al comienzo de la Fase 3, después de limpiar el
+  template y antes de aplicar el sistema de diseño. Reemplaza la regla original de
+  `PROMPT_3` ("no migres a versiones mayores"): se decidió así para no construir
+  las pantallas dos veces y resolver las vulnerabilidades de Next 14.
+- **Sistema de diseño** (aprobado): concepto "informe de analista". Modo claro por
+  defecto (no sigue al sistema; el tema elegido se recuerda). Neutros cálidos
+  (Paper, Ink, Graphite), acento Ochre, Gain/Loss solo para mejora/empeora (con
+  flecha y signo). Paleta de datos validada con el script de dataviz: ocre, turquesa,
+  ciruela, azul, en ese orden. Tipografía: Newsreader solo para las frases de
+  hallazgo, IBM Plex Sans para interfaz y números (cifras tabulares también en los
+  KPI). Un único elemento audaz: el hallazgo principal con el dato en marcador ocre.
+  Sin sombras ni degradados; separación con líneas finas.
 - **LLM:** se mantiene el proveedor actual, encapsulado en un único módulo para
   poder cambiarlo sin tocar el resto.
 
