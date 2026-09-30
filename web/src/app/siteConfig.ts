@@ -1,16 +1,14 @@
 export const siteConfig = {
-  name: "Dashboard",
-  url: "https://dashboard.tremor.so",
-  description: "The only dashboard you will ever need.",
+  name: "InsightFlow",
+  description:
+    "Analytics for a B2B SaaS company: revenue, retention, customers and an AI analyst.",
   baseLinks: {
     home: "/",
     overview: "/overview",
-    details: "/details",
-    settings: {
-      general: "/settings/general",
-      billing: "/settings/billing",
-      users: "/settings/users",
-    },
+    revenue: "/revenue",
+    retention: "/retention",
+    customers: "/customers",
+    ask: "/ask",
   },
 }
 

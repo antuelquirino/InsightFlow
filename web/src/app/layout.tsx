@@ -13,27 +13,18 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://yoururl.com"),
   title: siteConfig.name,
   description: siteConfig.description,
-  keywords: [],
   authors: [
-    {
-      name: "yourname",
-      url: "",
-    },
+    { name: "Antuel Quirino", url: "https://github.com/antuelquirino" },
   ],
-  creator: "yourname",
+  creator: "Antuel Quirino",
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: siteConfig.url,
     title: siteConfig.name,
     description: siteConfig.description,
     siteName: siteConfig.name,
-  },
-  icons: {
-    icon: "/favicon.ico",
   },
 }
 

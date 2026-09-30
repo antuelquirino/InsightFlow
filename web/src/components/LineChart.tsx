@@ -27,9 +27,7 @@ import {
   hasOnlyOneValueForKey,
 } from "@/lib/chartUtils"
 import { useOnWindowResize } from "@/lib/useOnWindowResize"
-import { cx, percentageFormatter } from "@/lib/utils"
-import { Badge } from "./Badge"
-import { getBadgeType } from "./ui/overview/DashboardChartCard"
+import { cx } from "@/lib/utils"
 
 //#region Legend
 
@@ -404,7 +402,6 @@ const OverviewChartTooltip = ({
     if (!active || !payload) return null
 
     const title = payload[0].payload.title
-    const evolution = payload[0].payload.evolution
     if (!title) return null
 
     return (
@@ -429,11 +426,6 @@ const OverviewChartTooltip = ({
           >
             {title}
           </p>
-          {evolution !== undefined && (
-            <Badge variant={getBadgeType(evolution)}>
-              {percentageFormatter(evolution)}
-            </Badge>
-          )}
         </div>
         <div className={cx("space-y-1 p-2")}>
           {filteredPayload.map((payload: any, index: number) => {
