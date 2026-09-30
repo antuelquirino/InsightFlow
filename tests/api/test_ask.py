@@ -152,6 +152,24 @@ def test_persistent_invented_numbers_fall_back_to_a_neutral_answer(ask_settings)
     assert read_log(ask_settings)[0]["unsupported_numbers"] == ["5.2"]
 
 
+def test_page_language_is_passed_to_the_answer(ask_settings):
+    llm = FakeLLM(GOOD_SQL, GOOD_ANSWER)
+    make_client(ask_settings, llm).post("/ask", json={"question": QUESTION, "language": "es"})
+    note = llm.calls[1][-1]
+    assert note["role"] == "system" and "coma decimal" in note["content"] and "Anuncios pagos" in note["content"]
+
+
+def test_without_language_there_is_no_language_note(ask_settings):
+    llm = FakeLLM(GOOD_SQL, GOOD_ANSWER)
+    make_client(ask_settings, llm).post("/ask", json={"question": QUESTION})
+    assert llm.calls[1][-1]["role"] == "user"
+
+
+def test_unknown_language_is_rejected(ask_settings):
+    response = make_client(ask_settings, FakeLLM()).post("/ask", json={"question": QUESTION, "language": "fr"})
+    assert response.status_code == 422
+
+
 def test_words_in_another_script_trigger_one_rewrite(ask_settings):
     slipped = {**GOOD_ANSWER, "answer": "El churn de Starter subió a 9,2%, בעיקר por bajas."}
     fixed = {**GOOD_ANSWER, "answer": "El churn de Starter subió a 9,2%, sobre todo por bajas."}

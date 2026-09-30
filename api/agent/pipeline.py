@@ -102,6 +102,17 @@ FAILED_ANSWER = (
 )
 NEUTRAL_ANSWER = "Here are the results for your question; the table below has the details."
 
+# Sent last when the page's language is known. The general rule sits deep in a long
+# prompt and the model kept writing "8.5%" and "paid ads" in Spanish answers.
+LANGUAGE_NOTES = {
+    "en": "Write the answer and the insight in English: $297k, $3.6M, 9.2%, 2.5x, "
+          "\"January 2026\". Channels: Organic, Paid ads, Partner, Outbound.",
+    "es": "Escribí la respuesta y el insight en español de Argentina, con coma decimal y punto "
+          "de miles: US$297 mil, US$3,6 M, US$1.250, 9,2%, 2,5x, +1,9 pp, \"enero de 2026\". "
+          "Canales: Orgánico, Anuncios pagos, Partners, Outbound. Los planes se llaman Starter, "
+          "Pro y Enterprise. Ninguna palabra en inglés salvo esos nombres, churn, MRR, NRR y LTV/CAC.",
+}
+
 
 class SqlDraft(BaseModel):
     sql: str | None = None
@@ -135,13 +146,13 @@ class Analyst:
         self.llm = llm
         self.marts = marts
 
-    def ask(self, question: str) -> AskResult:
+    def ask(self, question: str, language: str | None = None) -> AskResult:
         started = time.perf_counter()
-        result = self._ask(question)
+        result = self._ask(question, language)
         result.duration_ms = round((time.perf_counter() - started) * 1000)
         return result
 
-    def _ask(self, question: str) -> AskResult:
+    def _ask(self, question: str, language: str | None) -> AskResult:
         attempts: list[dict[str, Any]] = []
         messages = [
             {"role": "system", "content": SQL_PROMPT + marts_context()},
@@ -195,11 +206,11 @@ class Analyst:
         columns = list(rows[0]) if rows else []
         result = AskResult(status="answered", answer=NEUTRAL_ANSWER, sql=query.sql,
                            columns=columns, rows=rows, attempts=attempts)
-        self._write_answer(question, result)
+        self._write_answer(question, result, language)
         result.chart = checked_chart(result.chart, columns, rows)
         return result
 
-    def _write_answer(self, question: str, result: AskResult) -> None:
+    def _write_answer(self, question: str, result: AskResult, language: str | None = None) -> None:
         payload = {
             "question": question,
             "sql": result.sql,
@@ -212,6 +223,8 @@ class Analyst:
             {"role": "system", "content": ANSWER_PROMPT + marts_context()},
             {"role": "user", "content": json.dumps(payload, default=str)},
         ]
+        if language in LANGUAGE_NOTES:
+            messages.append({"role": "system", "content": LANGUAGE_NOTES[language]})
         for _ in range(2):
             try:
                 draft = AnswerDraft.model_validate(self.llm.complete_json(messages))

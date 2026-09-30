@@ -196,6 +196,11 @@ class AskRequest(BaseModel):
         description="A business question in plain language.",
         examples=["What happened to Starter churn after the price change?"],
     )
+    language: Literal["en", "es"] | None = Field(
+        default=None,
+        description="Language of the page asking. The answer uses its number formats and names; "
+        "without it, the answer follows the language of the question.",
+    )
 
 
 class Chart(BaseModel):
