@@ -326,9 +326,15 @@ const ChartLegend = (
     setLegendHeight(calculateHeight(legendRef.current?.clientHeight))
   })
 
-  const categories = payload
-    .filter((item) => item.type !== "none")
-    .map((entry) => String(entry.value))
+  const shown = new Set(
+    payload
+      .filter((item) => item.type !== "none")
+      .map((entry) => String(entry.value)),
+  )
+  // categoryColors keeps the order the series were given in
+  const categories = [...categoryColors.keys()].filter((category) =>
+    shown.has(category),
+  )
 
   return (
     <div ref={legendRef} className="flex items-center justify-end">

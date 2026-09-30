@@ -78,6 +78,20 @@ export const constructCategoryColors = (
   return categoryColors
 }
 
+// The CSS variable behind each chart color, for SVG fills set in code.
+const CSS_VARIABLES: Record<AvailableChartColorsKeys, string> = {
+  ochre: "--series-1",
+  teal: "--series-2",
+  plum: "--series-3",
+  blue: "--series-4",
+  muted: "--series-muted",
+  gain: "--gain",
+  loss: "--loss",
+}
+
+export const cssColor = (color: AvailableChartColorsKeys): string =>
+  `var(${CSS_VARIABLES[color]})`
+
 export const getColorClassName = (
   color: AvailableChartColorsKeys,
   type: ColorUtility,

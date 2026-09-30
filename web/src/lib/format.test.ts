@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest"
 
+import { formatLabel, guessFormat } from "@/components/insight/valueFormats"
+
 import {
   formatChange,
   formatCurrency,
@@ -94,5 +96,32 @@ describe("months", () => {
   it("names the last day of the month", () => {
     expect(formatMonthEnd("2026-08-01")).toBe("Aug 31, 2026")
     expect(formatMonthEnd("2024-02-01")).toBe("Feb 29, 2024")
+  })
+})
+
+describe("formats for agent result columns", () => {
+  it.each([
+    ["logo_churn_rate", "percent"],
+    ["gross_mrr_churn_rate", "percent"],
+    ["nrr", "percent"],
+    ["usage_trend", "percent"],
+    ["churned_mrr", "currency"],
+    ["expansion_mrr", "currency"],
+    ["cac", "currency"],
+    ["ltv_to_cac", "ratio"],
+    ["payback_months", "months"],
+    ["churned_customers", "number"],
+    ["paying_customers", "number"],
+  ])("%s -> %s", (column, format) => {
+    expect(guessFormat(column)).toBe(format)
+  })
+})
+
+describe("labels for agent result values", () => {
+  it("names months, plans and channels", () => {
+    expect(formatLabel("2026-08-01")).toBe("Aug 2026")
+    expect(formatLabel("paid_ads")).toBe("Paid ads")
+    expect(formatLabel("enterprise")).toBe("Enterprise")
+    expect(formatLabel("Scott and Sons")).toBe("Scott and Sons")
   })
 })

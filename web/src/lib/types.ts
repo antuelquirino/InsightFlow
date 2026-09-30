@@ -127,3 +127,19 @@ export interface AtRiskCustomer {
 export interface AtRiskResponse {
   customers: AtRiskCustomer[]
 }
+
+export interface AskChart {
+  type: "line" | "bar" | "number" | "table"
+  x: string | null
+  y: string[]
+}
+
+export interface AskResponse {
+  status: "answered" | "cannot_answer" | "failed"
+  answer: string
+  insight: string | null
+  sql: string | null
+  columns: string[]
+  rows: Record<string, string | number | boolean | null>[]
+  chart: AskChart
+}

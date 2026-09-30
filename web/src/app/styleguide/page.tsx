@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { Suspense } from "react"
 
 import { Badge } from "@/components/Badge"
@@ -20,6 +21,7 @@ import { formatCurrency, formatMonth, formatPercent } from "@/lib/format"
 import { headlineKpis } from "@/lib/kpis"
 import { periodRange } from "@/lib/period"
 import { INTERFACE_COLORS, SERIES_COLORS, type ColorToken } from "@/lib/tokens"
+import { cx, focusRing } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Design system · InsightFlow" }
 
@@ -57,7 +59,13 @@ const PRINCIPLES = [
 
 export default function StyleguidePage() {
   return (
-    <div className="space-y-14">
+    <div className="space-y-14 pb-16">
+      <Link
+        href="/"
+        className={cx("text-sm text-graphite hover:text-ink", focusRing)}
+      >
+        ← Back to the dashboard
+      </Link>
       <PageHeader
         title="Design system"
         note="The rules behind InsightFlow’s interface. Examples use live data from the API."

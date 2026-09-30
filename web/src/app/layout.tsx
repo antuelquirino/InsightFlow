@@ -4,8 +4,6 @@ import { IBM_Plex_Sans, Newsreader } from "next/font/google"
 import "./globals.css"
 import { siteConfig } from "./siteConfig"
 
-import { Sidebar } from "@/components/ui/navigation/Sidebar"
-
 // Interface and numbers: tabular figures, legible at small sizes.
 const plex = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -55,10 +53,9 @@ export default function RootLayout({
           defaultTheme="light"
           enableSystem={false}
         >
-          <div className="mx-auto max-w-(--breakpoint-2xl)">
-            <Sidebar />
-            <main className="lg:pl-60">{children}</main>
-          </div>
+          <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-10 lg:pt-8">
+            {children}
+          </main>
         </ThemeProvider>
       </body>
     </html>
